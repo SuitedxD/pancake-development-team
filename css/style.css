@@ -1547,3 +1547,402 @@ nav.nav-on-dark-text .nav-links a:hover {
     transform: translateY(0);
   }
 }
+
+/* =========================================
+   PANCAKE — RESPONSIVE ADJUSTMENTS
+   ========================================= */
+
+/* Tablets and smaller laptops */
+@media (max-width: 960px) {
+
+  .pancake-page,
+  .pancake-page * {
+    min-width: 0;
+  }
+
+  .pancake-page .pancake-hero {
+    width: 100%;
+    margin-left: 0;
+    min-height: 100vh;
+    min-height: 100svh;
+    padding: 110px 24px 85px;
+  }
+
+  .pancake-page .pancake-content {
+    width: 100%;
+    max-width: 760px;
+  }
+
+  .pancake-page .pancake-title {
+    font-size: clamp(52px, 11vw, 88px);
+    overflow-wrap: break-word;
+  }
+
+  .pancake-page .pancake-subtitle {
+    max-width: 100%;
+  }
+
+  .pancake-page .pancake-blueprint {
+    padding: 72px 0 90px;
+  }
+
+  .pancake-page .pancake-blueprint > .shell {
+    width: calc(100% - 40px);
+  }
+
+  .pancake-page .pancake-blueprint-content {
+    width: 100%;
+  }
+
+  .pancake-page .pancake-showcase {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 36px;
+    margin-top: 90px;
+  }
+
+  .pancake-page .pancake-showcase.reverse .pancake-showcase-visual,
+  .pancake-page .pancake-showcase.reverse .pancake-showcase-copy {
+    order: initial;
+  }
+
+  .pancake-page .pancake-showcase-copy {
+    width: 100%;
+    max-width: 720px;
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  .pancake-page .pancake-showcase-copy p {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .pancake-page .pancake-showcase-visual {
+    width: 100%;
+    min-height: clamp(260px, 42vw, 390px);
+  }
+
+  .pancake-page .pancake-feature-image--square {
+    width: min(86%, 430px);
+  }
+
+  .pancake-page .pancake-documentation {
+    gap: 22px;
+  }
+
+  .pancake-page .pancake-final-cta {
+    width: 100%;
+  }
+
+  .pancake-page .pancake-video-embed {
+    width: 100%;
+  }
+}
+
+/* Mobile devices */
+@media (max-width: 680px) {
+
+  html {
+    scroll-padding-top: 70px;
+  }
+
+  .pancake-page .shell {
+    width: calc(100% - 30px);
+  }
+
+  /* Navigation */
+  .pancake-page nav {
+    width: 100%;
+    min-height: 54px;
+    padding: 9px 12px;
+    gap: 8px;
+  }
+
+  .pancake-page .brand {
+    flex: 0 1 auto;
+    max-width: 58%;
+    gap: 8px;
+  }
+
+  .pancake-page .brand-mark {
+    width: 27px;
+    height: 27px;
+    flex: 0 0 27px;
+  }
+
+  .pancake-page .brand-name {
+    max-width: clamp(72px, calc(100vw - 230px), 185px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+  }
+
+  .pancake-page .nav-links {
+    flex: 0 0 auto;
+    gap: 0;
+  }
+
+  .pancake-page .nav-links a {
+    padding: 8px 7px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  /* Hero */
+  .pancake-page .pancake-hero {
+    min-height: 100vh;
+    min-height: 100svh;
+    padding: 100px 12px 75px;
+  }
+
+  .pancake-page .pancake-video {
+    object-position: center;
+  }
+
+  .pancake-page .pancake-content {
+    width: 100%;
+  }
+
+  .pancake-page .pancake-title {
+    font-size: clamp(48px, 17vw, 82px);
+    line-height: 1;
+  }
+
+  .pancake-page .pancake-subtitle {
+    max-width: 340px;
+    margin-top: 14px;
+    font-size: 15px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  .pancake-page .pancake-actions {
+    width: min(100%, 340px);
+    margin-top: 26px;
+    gap: 11px;
+  }
+
+  .pancake-page .pancake-actions .btn {
+    width: 100%;
+    max-width: 100%;
+    min-height: 48px;
+    padding: 12px 16px;
+    white-space: normal;
+    text-align: center;
+  }
+
+  /* Content section */
+  .pancake-page .pancake-blueprint {
+    padding: 58px 0 72px;
+  }
+
+  .pancake-page .pancake-blueprint > .shell {
+    width: calc(100% - 28px);
+  }
+
+  .pancake-page .pancake-blueprint-content {
+    width: 100%;
+  }
+
+  .pancake-page .pancake-teaser h3 {
+    font-size: clamp(28px, 8.5vw, 42px);
+    line-height: 1.05;
+    overflow-wrap: anywhere;
+  }
+
+  .pancake-page .pancake-teaser > p {
+    max-width: 100%;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  /* Responsive YouTube embed */
+  .pancake-page .pancake-video-embed {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    margin-top: 24px;
+    border-radius: 16px;
+  }
+
+  .pancake-page .pancake-video-embed iframe {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Documentation */
+  .pancake-page .pancake-documentation {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 20px;
+    margin-top: 40px;
+    padding: 23px 19px;
+    border-radius: 22px;
+  }
+
+  .pancake-page .pancake-documentation h4 {
+    font-size: clamp(23px, 7vw, 32px);
+    line-height: 1.12;
+    overflow-wrap: anywhere;
+  }
+
+  .pancake-page .pancake-documentation p {
+    font-size: 13px;
+    line-height: 1.65;
+  }
+
+  .pancake-page .pancake-documentation > .btn {
+    width: 100%;
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  /* Feature showcases */
+  .pancake-page .pancake-showcase {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+    margin-top: 76px;
+  }
+
+  .pancake-page .pancake-showcase-copy {
+    width: 100%;
+    text-align: center;
+  }
+
+  .pancake-page .pancake-showcase-copy h4 {
+    font-size: clamp(32px, 9.5vw, 46px);
+    line-height: 1;
+    overflow-wrap: anywhere;
+  }
+
+  .pancake-page .pancake-showcase-copy p {
+    margin-top: 16px;
+    font-size: 14px;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+  }
+
+  .pancake-page .pancake-showcase-visual {
+    width: 100%;
+    min-height: 0;
+    padding: 12px;
+    border-radius: 22px;
+  }
+
+  .pancake-page .pancake-feature-image--square {
+    width: min(100%, 380px);
+    aspect-ratio: 1 / 1;
+    height: auto;
+    border-radius: 16px;
+  }
+
+  /* Final call to action */
+  .pancake-page .pancake-final-cta {
+    width: 100%;
+    margin-top: 76px;
+    padding: 38px 20px;
+    border-radius: 23px;
+  }
+
+  .pancake-page .pancake-final-cta h2 {
+    max-width: 100%;
+    font-size: clamp(34px, 9.5vw, 46px);
+    line-height: 1;
+    overflow-wrap: anywhere;
+  }
+
+  .pancake-page .pancake-final-cta > p {
+    margin-top: 17px;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .pancake-page .pancake-final-cta-actions {
+    margin-top: 24px;
+  }
+
+  .pancake-page .pancake-final-cta .btn-primary {
+    width: 100%;
+    min-width: 0;
+    min-height: 54px;
+    padding: 15px 18px;
+    font-size: 14px;
+  }
+
+  /* Footer */
+  .pancake-page .footer-line {
+    gap: 12px;
+    line-height: 1.6;
+  }
+
+  .pancake-page .footer-contact {
+    gap: 7px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .pancake-page .footer-contact a {
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Extra-small phones */
+@media (max-width: 360px) {
+
+  .pancake-page nav {
+    padding-inline: 8px;
+    gap: 4px;
+  }
+
+  .pancake-page .brand {
+    gap: 6px;
+  }
+
+  .pancake-page .brand-name {
+    max-width: calc(100vw - 218px);
+    font-size: 12px;
+  }
+
+  .pancake-page .nav-links a {
+    padding: 8px 5px;
+    font-size: 10px;
+  }
+
+  .pancake-page .pancake-title {
+    font-size: 17vw;
+  }
+
+  .pancake-page .pancake-blueprint > .shell {
+    width: calc(100% - 22px);
+  }
+
+  .pancake-page .pancake-final-cta {
+    padding-inline: 15px;
+  }
+}
+
+/* Touch devices: avoid hover-based movement */
+@media (hover: none) and (pointer: coarse) {
+
+  .pancake-page .pancake-showcase:hover .pancake-feature-image {
+    transform: none;
+  }
+
+  .pancake-page .btn:hover {
+    transform: none;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+
+  .pancake-page *,
+  .pancake-page *::before,
+  .pancake-page *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
