@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#ffd466" />
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <link rel="alternate icon" href="assets/favicon.png" />
+  <title>Pancake Development Team</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    #about-us.section {
+      padding-bottom: 24px;
+    }
+
+    #projects.section {
+      padding-top: 24px;
+    }
+
+    .products .product-card {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .products .product-card:focus-visible {
+      outline: 3px solid var(--gold);
+      outline-offset: 4px;
+    }
+  </style>
+</head>
+<body>
+  <main class="app-root" id="top">
+    <div class="glow a"></div>
+    <div class="glow b"></div>
+
+    <div class="shell">
+      <nav aria-label="Primary navigation">
+        <a class="brand" href="#top" aria-label="Pancake Development Team home">
+          <span class="brand-mark" aria-hidden="true">
+            <img src="assets/pancake_team_icon_01.png" alt="" />
+          </span>
+          <span class="brand-name">Pancake Development Team</span>
+        </a>
+        <div class="nav-links">
+          <a href="#about-us">About Us</a>
+          <a href="#projects">Projects</a>
+        </div>
+      </nav>
+
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-grid">
+          <div>
+            <h1 id="hero-title">We build. You bring the <span style="color:var(--discord)">syrup.</span></h1>
+            <p class="hero-copy">We build useful things and take the time to get them right. Keeping things simple, cutting through the noise, and caring about the details that make something feel good to use.</p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="#projects">Explore projects <span aria-hidden="true">↗</span></a>
+              <a
+                class="btn btn-secondary"
+                href="#about-us"
+                style="
+                  color: var(--ink);
+                  background: rgba(255, 255, 255, .30);
+                  border-color: rgba(255, 255, 255, .48);
+                  backdrop-filter: blur(16px) saturate(120%);
+                  -webkit-backdrop-filter: blur(16px) saturate(120%);
+                  box-shadow: 0 12px 28px rgba(0, 0, 0, .10);
+                "
+              >
+                About Us <span aria-hidden="true">↓</span>
+              </a>
+            </div>
+          </div>
+          <div class="hero-icon" aria-label="Pancake Development Team icon">
+            <img src="assets/pancake_team_hero_icon_01.png" alt="Pancake Development Team icon" />
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="blueprint-zone" data-nav-theme="dark">
+      <div class="shell">
+        <section class="section" id="about-us" aria-labelledby="about-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Who we are</div>
+              <h2 id="about-title">About us.</h2>
+              <p class="section-intro">Pancake Development Team is a small team that builds useful tools and brings new ideas to life. We like keeping things simple, making sure everything feels right to use, and paying attention to the little details that make a difference. We don't want to overcomplicate things — just build stuff that works well and makes people's lives a little easier.</p>
+              <p class="section-intro">We're always learning, trying new things, and figuring out how to make what we build even better. Our community is a big part of that, and we want to listen to the people who use our tools, learn from their feedback, and keep coming up with new ideas. There's always something to improve or something new to cook up, and we're excited to see where it takes us. </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="projects" aria-labelledby="projects-title">
+          <div class="section-head">
+            <div>
+              <div class="kicker">Built by Pancake Development Team</div>
+              <h2 id="projects-title">Our solutions.</h2>
+              <p class="section-intro">A concise lineup of our standout projects. Discover more by clicking on any of them!</p>
+            </div>
+          </div>
+
+          <div class="products">
+            <a class="product-card" style="--accent:#ffd466;--accent-secondary:#ff914d" href="pancake/index.html" data-href="pancake/index.html" data-product="Pancake Bot" aria-label="Pancake Bot">
+              <div class="product-arrow" aria-hidden="true">↗</div>
+              <div class="product-poster">
+                <img src="assets/pancakebot_card_01.png" alt="Pancake Bot card preview" loading="lazy" decoding="async" onerror="this.hidden=true" />
+                <span class="product-poster-fallback">Pancake Bot · card visual</span>
+              </div>
+              <span class="product-tag">Discord Application</span>
+              <p>A modular bot built around an exclusive plugin system. Pick the commands you need, leave out the rest, and keep your server clean and clutter-free.</p>
+            </a>
+
+            <a class="product-card" style="--accent:#5865f2;--accent-secondary:#7289da" href="https://github.com/SuitedxD/pancake-embed-editor" target="_blank" rel="noopener noreferrer" data-product="Pancake Embed Editor" aria-label="Pancake Embed Editor">
+              <div class="product-arrow" aria-hidden="true">↗</div>
+              <div class="product-poster">
+                <img src="assets/embededitor_card_01.png" alt="Pancake Embed Editor card preview" loading="lazy" decoding="async" onerror="this.hidden=true" />
+                <span class="product-poster-fallback">Embed Editor · card visual</span>
+              </div>
+              <span class="product-tag">Pancake Feature</span>
+              <p>A focused playground for building polished Discord embeds without wrestling with JSON or guesswork.</p>
+            </a>
+
+            <a class="product-card" style="--accent:#5865f2;--accent-secondary:#99aab5" href="https://discord.gg/SgXdeVaxuh" target="_blank" rel="noopener noreferrer" data-product="Discord Community Server" aria-label="Discord Community Server">
+              <div class="product-arrow" aria-hidden="true">↗</div>
+              <div class="product-poster">
+                <img src="assets/discordserver_card_01.png" alt="Discord Community Server card preview" loading="lazy" decoding="async" onerror="this.hidden=true" />
+                <span class="product-poster-fallback">Discord Server · card visual</span>
+              </div>
+              <span class="product-tag">Discord Server</span>
+              <p>The place for changelogs, feedback, support, sneak peeks, and the people building alongside us.</p>
+            </a>
+          </div>
+        </section>
+
+        <footer aria-label="Pancake Development Team footer">
+          <div class="footer-line">
+            <span>© <span id="year"></span> Pancake Development Team</span>
+            <div class="footer-contact" aria-label="Contact">
+              <a href="#" aria-label="Support Server">Support Server</a>
+              <span aria-hidden="true">·</span>
+              <a href="mailto:pancakebot.team@gmail.com">pancakebot.team@gmail.com</a>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
