@@ -1234,7 +1234,7 @@ footer { padding: 0 0 34px; }
       }
 
       .pancake-title {
-        font-size: clamp(56px, 18vw, 88px);
+        font-size: clamp(56px, 12vw, 88px);
       }
 
       .pancake-subtitle {
@@ -1398,7 +1398,7 @@ footer { padding: 0 0 34px; }
       }
 
       .pancake-title {
-        font-size: 21vw;
+        font-size: 12vw;
       }
 
       .pancake-blueprint-content {
@@ -1574,7 +1574,7 @@ nav.nav-on-dark-text .nav-links a:hover {
   }
 
   .pancake-page .pancake-title {
-    font-size: clamp(52px, 11vw, 88px);
+    font-size: clamp(52px, 12vw, 88px);
     overflow-wrap: break-word;
   }
 
@@ -1705,7 +1705,7 @@ nav.nav-on-dark-text .nav-links a:hover {
   }
 
   .pancake-page .pancake-title {
-    font-size: clamp(48px, 17vw, 82px);
+    font-size: clamp(48px, 12vw, 82px);
     line-height: 1;
   }
 
@@ -1910,7 +1910,7 @@ nav.nav-on-dark-text .nav-links a:hover {
   }
 
   .pancake-page .pancake-title {
-    font-size: 17vw;
+    font-size: 12vw;
   }
 
   .pancake-page .pancake-blueprint > .shell {
