@@ -1471,11 +1471,6 @@ nav.nav-on-dark-text .nav-links a:hover {
     scroll-behavior: smooth;
   }
 
-  /* Navigation entrance */
-  .pancake-page > .shell:first-child nav {
-    animation: pancakeFadeUp 0.55s ease-out both;
-  }
-
   /* Hero entrance */
   .pancake-hero .pancake-content {
     animation: pancakeFadeUp 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;

@@ -1,38 +1,84 @@
 const year = document.getElementById('year');
 if (year) year.textContent = new Date().getFullYear();
 
-const nav = document.querySelector('nav');
+
+const nav = document.querySelector(
+  'nav[aria-label="Primary navigation"]'
+);
+
 const hero = document.querySelector('.hero');
+
 let lastScrollY = window.scrollY;
+let scrollDelta = 0;
+let lastDirection = 0;
 let rafId = 0;
 
 function updateNavigation() {
   const currentY = window.scrollY;
-  const direction = currentY - lastScrollY;
+  const delta = currentY - lastScrollY;
+  const direction = Math.sign(delta);
 
-  if (!nav) return;
-
-  if (currentY <= 24) {
-    nav.classList.remove('nav-hidden');
-  } else if (direction > 0) {
-    nav.classList.add('nav-hidden');
-  } else if (direction < 0) {
-    nav.classList.remove('nav-hidden');
+  if (!nav) {
+    rafId = 0;
+    lastScrollY = currentY;
+    return;
   }
 
+  // En la parte superior, el encabezado siempre está visible.
+  if (currentY <= 24) {
+    nav.classList.remove('nav-hidden');
+    scrollDelta = 0;
+    lastDirection = 0;
+  } else if (direction !== 0) {
+    // Reinicia la acumulación si cambia la dirección.
+    if (direction !== lastDirection) {
+      scrollDelta = 0;
+    }
+
+    scrollDelta += delta;
+
+    // Oculta al bajar al menos 8 píxeles acumulados.
+    if (scrollDelta >= 8) {
+      nav.classList.add('nav-hidden');
+      scrollDelta = 0;
+    }
+
+    // Muestra al subir al menos 8 píxeles acumulados.
+    else if (scrollDelta <= -8) {
+      nav.classList.remove('nav-hidden');
+      scrollDelta = 0;
+    }
+
+    lastDirection = direction;
+  }
+
+  // Conserva el cambio de apariencia al entrar
+  // en las secciones oscuras de la página principal.
   if (hero) {
-    nav.classList.toggle('nav-on-dark', hero.getBoundingClientRect().bottom <= 70);
+    nav.classList.toggle(
+      'nav-on-dark',
+      hero.getBoundingClientRect().bottom <= 70
+    );
   }
 
   lastScrollY = currentY;
   rafId = 0;
 }
 
-window.addEventListener('scroll', () => {
-  if (!rafId) rafId = window.requestAnimationFrame(updateNavigation);
-}, { passive: true });
+if (nav) {
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (!rafId) {
+        rafId = window.requestAnimationFrame(updateNavigation);
+      }
+    },
+    { passive: true }
+  );
 
-updateNavigation();
+  updateNavigation();
+}
+
 
 for (const card of document.querySelectorAll('.product-card')) {
   const select = () => {
