@@ -31,7 +31,6 @@
 .portal-search-icon { font-size: 26px; line-height: 1; color: var(--muted-light); transform: rotate(-20deg); }
 .portal-search-wrap input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 14px; }
 .portal-search-wrap input::placeholder { color: #77736d; }
-.portal-search-wrap kbd { flex: 0 0 auto; color: #89847d; border: 1px solid rgba(255,255,255,.10); border-radius: 6px; padding: 4px 6px; font-size: 10px; white-space: nowrap; }
 .portal-sort-wrap select { min-width: 175px; height: 52px; border: 1px solid var(--portal-border); border-radius: 15px; padding: 0 36px 0 14px; color: var(--text); background: #111112; font: inherit; font-size: 12px; font-weight: 750; outline: 0; }
 .portal-category-section { padding: 27px 0 15px; }
 .portal-section-caption { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
@@ -46,11 +45,11 @@
 .portal-section-heading h2 { margin: 8px 0 0; color: var(--text); font-size: clamp(30px,4vw,45px); line-height: 1; letter-spacing: -.06em; }
 .portal-section-heading p { margin: 12px 0 0; color: var(--muted); font-size: 13px; }
 .portal-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }
-.plugin-card { position: relative; min-width: 0; display: flex; flex-direction: column; overflow: hidden; padding: 0 21px 21px; border: 1px solid var(--portal-border); border-radius: 21px; background: rgba(13,13,14,.82); box-shadow: 0 16px 38px rgba(0,0,0,.12); transition: transform .24s ease, border-color .24s ease, background .24s ease, box-shadow .24s ease; }
+.plugin-card { position: relative; min-width: 0; min-height: 100%; display: flex; flex-direction: column; overflow: hidden; padding: 0 21px 21px; border: 1px solid var(--portal-border); border-radius: 21px; color: var(--text); text-decoration: none; cursor: pointer; background: rgba(13,13,14,.82); box-shadow: 0 16px 38px rgba(0,0,0,.12); transition: transform .24s ease, border-color .24s ease, background .24s ease, box-shadow .24s ease; }
 .plugin-card-content { display: flex; flex: 1; min-width: 0; flex-direction: column; }
-.plugin-card-cover-link:focus-visible { outline: 3px solid var(--portal-accent); outline-offset: -3px; }
+.plugin-card:focus-visible { outline: 3px solid var(--portal-accent); outline-offset: 3px; }
 .plugin-card:hover { transform: translateY(-4px); border-color: rgba(255,212,102,.28); background: rgba(20,20,21,.94); box-shadow: 0 23px 48px rgba(0,0,0,.2); }
-.plugin-card-cover-link { display: block; width: calc(100% + 42px); margin: 0 -21px 17px; overflow: hidden; }
+.plugin-card-cover-wrap { display: block; width: calc(100% + 42px); margin: 0 -21px 17px; overflow: hidden; }
 .plugin-card-cover { display: block; width: 100%; aspect-ratio: 16 / 7; object-fit: cover; background: rgba(255,255,255,.025); border-bottom: 1px solid var(--portal-border); }
 .plugin-card-cover-placeholder { display: grid; place-items: center; width: 100%; aspect-ratio: 16 / 7; color: rgba(255,212,102,.7); font-size: 40px; font-weight: 900; background: radial-gradient(circle at 25% 0%, rgba(255,212,102,.13), transparent 55%), rgba(255,255,255,.025); border-bottom: 1px solid var(--portal-border); }
 .plugin-card-topline { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -96,7 +95,19 @@
 .plugin-action-button.is-active { color: var(--ink); border-color: var(--portal-accent); background: var(--portal-accent); }
 .plugin-detail-metrics { display: flex; flex-wrap: wrap; gap: 17px; margin-left: auto; color: var(--muted); font-size: 12px; }
 .plugin-detail-metrics strong { color: var(--text); }
-.plugin-detail-columns { display: grid; grid-template-columns: minmax(0,1.35fr) minmax(230px,.65fr); gap: 20px; margin-top: 28px; }
+.plugin-detail-columns { display: grid; grid-template-columns: minmax(0,1fr); gap: 16px; margin-top: 28px; }
+.plugin-details-panel { order: 0; border-color: rgba(255,212,102,.18); background: linear-gradient(135deg, rgba(255,212,102,.045), transparent 44%), var(--portal-panel); }
+.plugin-commands-panel { order: 1; }
+.plugin-detail-info { display: grid; grid-template-columns: minmax(0,.8fr) minmax(0,.8fr) minmax(0,1.4fr); gap: 12px; margin-top: 18px; }
+.plugin-detail-info .portal-id-panel { min-width: 0; margin: 0; padding: 14px 15px; border: 1px solid rgba(255,255,255,.075); border-radius: 12px; background: rgba(0,0,0,.19); }
+.plugin-detail-info .portal-id-panel > span { display: block; margin-bottom: 8px; color: var(--muted); font-size: 9px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+.plugin-detail-info .portal-id-panel > strong { display: block; color: var(--text); font-size: 13px; line-height: 1.55; font-weight: 700; overflow-wrap: anywhere; }
+.plugin-detail-info .portal-id-panel > code { display: block; margin: 0; color: var(--portal-accent); font: 12px/1.65 ui-monospace, SFMono-Regular, Consolas, monospace; overflow-wrap: anywhere; }
+.plugin-detail-categories { display: flex; align-items: flex-start; gap: 16px; margin-top: 18px; padding-top: 17px; border-top: 1px solid var(--portal-border); }
+.plugin-detail-categories-label { flex: 0 0 auto; padding-top: 5px; color: var(--muted); font-size: 10px; font-weight: 850; letter-spacing: .09em; text-transform: uppercase; }
+.plugin-detail-category-list { display: flex; flex-wrap: wrap; gap: 7px; min-width: 0; }
+.command-table-wrap { width: 100%; margin-top: 18px; overflow-x: auto; border-radius: 10px; }
+.command-table-wrap .portal-command-table { margin-top: 0; }
 .portal-panel { min-width: 0; padding: 22px; border: 1px solid var(--portal-border); border-radius: 20px; background: var(--portal-panel); }
 .portal-panel h2 { margin: 0; color: var(--text); font-size: 20px; letter-spacing: -.035em; }
 .portal-panel-intro { margin: 8px 0 0; color: var(--muted); font-size: 12px; line-height: 1.65; }
@@ -107,10 +118,6 @@
 .portal-command-table td:first-child { width: 39%; color: #f0d99f; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 11px; }
 .plugin-notes { margin-top: 14px; color: var(--muted-light); font-size: 12px; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
 .plugin-notes:empty { display: none; }
-.plugin-detail-category-list { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 16px; }
-.plugin-id-panel { margin-top: 17px; padding: 12px; background: rgba(0,0,0,.23); border-radius: 11px; }
-.plugin-id-panel span { display: block; color: var(--muted); font-size: 9px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
-.plugin-id-panel code { display: block; margin-top: 7px; color: #d5d0c7; font: 11px ui-monospace, SFMono-Regular, Consolas, monospace; overflow-wrap: anywhere; }
 
 /* Profile */
 .portal-profile, .portal-admin { padding: 38px 0 76px; }
@@ -188,7 +195,9 @@
   .portal-sort-wrap select { width: 100%; }
   .portal-section-heading { align-items: flex-start; flex-direction: column; }
   .portal-grid, .portal-library-grid { grid-template-columns: 1fr; }
-  .plugin-detail-columns { grid-template-columns: 1fr; }
+  .plugin-detail-columns { grid-template-columns: minmax(0,1fr); }
+  .plugin-detail-info { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .portal-install-panel { grid-column: 1 / -1; }
   .plugin-media-grid { grid-template-columns: 1fr; }
   .plugin-detail-metrics { width: 100%; margin-left: 0; padding-top: 5px; }
   .portal-command-table { font-size: 11px; }
@@ -202,14 +211,16 @@
   .portal-dialog { padding: 19px; }
 }
 @media (max-width: 480px) {
-  .portal-search-wrap kbd { display: none; }
-  .portal-user-actions { width: 100%; }
+    .portal-user-actions { width: 100%; }
   .portal-user-actions > button { flex: 1 1 auto; }
   .portal-title { font-size: clamp(40px,12vw,58px); }
   .portal-category-chip { padding: 0 10px; }
   .plugin-card { padding: 0 17px 17px; }
-  .plugin-card-cover-link { width: calc(100% + 34px); margin: 0 -17px 15px; }
+  .plugin-card-cover-wrap { width: calc(100% + 34px); margin: 0 -17px 15px; }
   .plugin-card h3 { font-size: 21px; }
+  .plugin-detail-info { grid-template-columns: minmax(0,1fr); }
+  .portal-install-panel { grid-column: auto; }
+  .plugin-detail-categories { flex-direction: column; gap: 9px; }
   .portal-page-heading { align-items: flex-start; flex-direction: column; }
 }
 @media (prefers-reduced-motion: reduce) {

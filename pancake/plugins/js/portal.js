@@ -186,18 +186,18 @@
     const cover = plugin.coverImage
       ? `<img class="plugin-card-cover" src="${escapeHtml(plugin.coverImage)}" alt="${escapeHtml(plugin.title)} cover" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`
       : `<div class="plugin-card-cover-placeholder" aria-hidden="true">P</div>`;
+    const pluginUrl = `${basePath}/${encodeURIComponent(plugin.pluginId)}`;
     return `
-      <article class="plugin-card">
-        <a class="plugin-card-cover-link" href="${basePath}/${encodeURIComponent(plugin.pluginId)}" aria-label="View ${escapeHtml(plugin.title)}">${cover}</a>
+      <a class="plugin-card" href="${pluginUrl}" aria-label="Open plugin ${escapeHtml(plugin.title)}">
+        <div class="plugin-card-cover-wrap">${cover}</div>
         <div class="plugin-card-content">
-        <div class="plugin-card-topline"><div class="plugin-card-categories">${cats || '<span class="plugin-mini-tag">Other</span>'}</div><a class="plugin-card-open" href="${basePath}/${encodeURIComponent(plugin.pluginId)}" aria-label="Open ${escapeHtml(plugin.title)}">↗</a></div>
-        <h3>${escapeHtml(plugin.title)}</h3>
-        <p class="plugin-author">By ${escapeHtml(plugin.authorDisplayName || 'Unknown')}</p>
-        <p class="plugin-description">${escapeHtml(plugin.description)}</p>
-        <div class="plugin-install-line"><span class="plugin-install-label">Install with</span><code>${escapeHtml(plugin.installWith)}</code></div>
-        <div class="plugin-card-footer"><div class="plugin-card-metrics"><span title="Likes"><b class="metric-icon" aria-hidden="true">♡</b>${formatNumber(plugin.likesCount)}</span><span title="Views"><b class="metric-icon" aria-hidden="true">◉</b>${formatNumber(plugin.views)}</span></div><span class="plugin-command-count">${formatNumber(plugin.commandCount ?? plugin.commands?.length)} commands</span></div>
+          <div class="plugin-card-topline"><div class="plugin-card-categories">${cats || '<span class="plugin-mini-tag">Other</span>'}</div><span class="plugin-card-open" aria-hidden="true">↗</span></div>
+          <h3>${escapeHtml(plugin.title)}</h3>
+          <p class="plugin-author">By ${escapeHtml(plugin.authorDisplayName || 'Unknown')}</p>
+          <p class="plugin-description">${escapeHtml(plugin.description)}</p>
+          <div class="plugin-card-footer"><div class="plugin-card-metrics"><span title="Likes"><b class="metric-icon" aria-hidden="true">♡</b>${formatNumber(plugin.likesCount)}</span><span title="Views"><b class="metric-icon" aria-hidden="true">◉</b>${formatNumber(plugin.views)}</span></div><span class="plugin-command-count">${formatNumber(plugin.commandCount ?? plugin.commands?.length)} commands</span></div>
         </div>
-      </article>`;
+      </a>`;
   }
 
   async function refreshCatalogue() {
@@ -233,7 +233,7 @@
   }
 
   function renderPluginDetail(plugin) {
-    const categories = (plugin.categories || []).map((category) => `<span class="portal-category-chip" aria-label="Category ${escapeHtml(category)}">${escapeHtml(category)}</span>`).join('');
+    const categories = (plugin.categories || []).map((category) => `<span class="plugin-mini-tag">${escapeHtml(category)}</span>`).join('');
     const commands = (plugin.commands || []).map((command) => `<tr><td>${escapeHtml(command.command)}</td><td>${escapeHtml(command.description)}</td></tr>`).join('');
     const mediaImages = (plugin.mediaImages || []).filter((url) => typeof url === 'string' && /^https:\/\//i.test(url));
     const youtubeVideos = (plugin.youtubeVideos || []).map(youtubeEmbedUrl).filter(Boolean);
@@ -246,9 +246,8 @@
       <a class="portal-back" href="${basePath}/">← Back to all plugins</a>
       <header class="plugin-detail-header">
         ${plugin.coverImage && /^https:\/\//i.test(plugin.coverImage) ? `<img class="plugin-detail-cover" src="${escapeHtml(plugin.coverImage)}" alt="${escapeHtml(plugin.title)} cover" decoding="async" referrerpolicy="no-referrer" />` : ''}
-        <div class="plugin-card-categories">${categories}</div>
         <h1>${escapeHtml(plugin.title)}</h1>
-        <p class="plugin-detail-author">By ${escapeHtml(plugin.authorDisplayName || 'Unknown')} · Added ${escapeHtml(formatDate(plugin.createdAt))}</p>
+        <p class="plugin-detail-author">By ${escapeHtml(plugin.authorDisplayName || 'Unknown')} <span aria-hidden="true">·</span> Added ${escapeHtml(formatDate(plugin.createdAt))}</p>
         <p class="plugin-detail-description">${escapeHtml(plugin.description)}</p>
         <div class="plugin-detail-actions">
           <button class="plugin-action-button${plugin.liked ? ' is-active' : ''}" id="detail-like-button" type="button" data-detail-like>♡ <span>${plugin.liked ? 'Liked' : 'Like'}</span></button>
@@ -257,17 +256,21 @@
         </div>
       </header>
       <div class="plugin-detail-columns">
-        <section class="portal-panel"><h2>Commands</h2><p class="portal-panel-intro">${formatNumber(plugin.commandCount)} command${plugin.commandCount === 1 ? '' : 's'} included with this plugin.</p>
-          <div class="install-code-block"><strong>Install with:</strong>\n${escapeHtml(plugin.installWith)}</div>
+        <aside class="portal-panel plugin-details-panel" aria-labelledby="plugin-details-title">
+          <h2 id="plugin-details-title">Plugin details</h2>
+          <div class="plugin-detail-info">
+            <div class="portal-id-panel"><span>Author</span><strong>${escapeHtml(plugin.authorDisplayName || 'Unknown')}</strong></div>
+            <div class="portal-id-panel"><span>Last updated</span><strong>${escapeHtml(formatDate(plugin.updatedAt))}</strong></div>
+            <div class="portal-id-panel portal-install-panel"><span>Install with</span><code>${escapeHtml(plugin.installWith)}</code></div>
+          </div>
+          ${categories ? `<div class="plugin-detail-categories"><span class="plugin-detail-categories-label">Categories</span><div class="plugin-detail-category-list">${categories}</div></div>` : ''}
+        </aside>
+        <section class="portal-panel plugin-commands-panel" aria-labelledby="plugin-commands-title">
+          <h2 id="plugin-commands-title">Commands</h2>
+          <p class="portal-panel-intro">${formatNumber(plugin.commandCount)} command${plugin.commandCount === 1 ? '' : 's'} included with this plugin.</p>
           <div class="command-table-wrap"><table class="portal-command-table"><thead><tr><th>Command(s)</th><th>Description</th></tr></thead><tbody>${commands}</tbody></table></div>
           ${plugin.notes ? `<p class="plugin-notes">${escapeHtml(plugin.notes)}</p>` : ''}
         </section>
-        <aside class="portal-panel"><h2>Plugin details</h2><p class="portal-panel-intro">A quick overview of this plugin.</p>
-          <div class="portal-id-panel"><span>Plugin ID: </span><code>${escapeHtml(plugin.pluginId)}</code></div>
-          <div class="plugin-detail-category-list">${categories}</div>
-          <div class="portal-id-panel"><span>Author: </span><code>${escapeHtml(plugin.authorDisplayName || 'Unknown')}</code></div>
-          <div class="portal-id-panel"><span>Last updated: </span><code>${escapeHtml(formatDate(plugin.updatedAt))}</code></div>
-        </aside>
       </div>
       ${mediaSection}`;
     showMode('detail');
@@ -617,12 +620,6 @@
         const plugin = state.adminDashboard?.plugins.find((item) => item.pluginId === deleteButton.dataset.deletePlugin);
         await adminMutation(`/api/admin/plugins/${encodeURIComponent(deleteButton.dataset.deletePlugin)}`, 'DELETE', {}, `Delete “${plugin?.title || deleteButton.dataset.deletePlugin}”? This permanently removes the plugin and its likes/favorites.`);
         return;
-      }
-    });
-    document.addEventListener('keydown', (event) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        $('#plugin-search').focus();
       }
     });
   }
