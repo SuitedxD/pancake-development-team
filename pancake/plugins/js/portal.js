@@ -263,10 +263,10 @@
           ${plugin.notes ? `<p class="plugin-notes">${escapeHtml(plugin.notes)}</p>` : ''}
         </section>
         <aside class="portal-panel"><h2>Plugin details</h2><p class="portal-panel-intro">A quick overview of this plugin.</p>
-          <div class="portal-id-panel"><span>Plugin ID</span><code>${escapeHtml(plugin.pluginId)}</code></div>
+          <div class="portal-id-panel"><span>Plugin ID: </span><code>${escapeHtml(plugin.pluginId)}</code></div>
           <div class="plugin-detail-category-list">${categories}</div>
-          <div class="portal-id-panel"><span>Author</span><code>${escapeHtml(plugin.authorDisplayName || 'Unknown')}</code></div>
-          <div class="portal-id-panel"><span>Last updated</span><code>${escapeHtml(formatDate(plugin.updatedAt))}</code></div>
+          <div class="portal-id-panel"><span>Author: </span><code>${escapeHtml(plugin.authorDisplayName || 'Unknown')}</code></div>
+          <div class="portal-id-panel"><span>Last updated: </span><code>${escapeHtml(formatDate(plugin.updatedAt))}</code></div>
         </aside>
       </div>
       ${mediaSection}`;
