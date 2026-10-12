@@ -206,7 +206,7 @@
   }
 
   function pluginCard(plugin) {
-    const cats = (plugin.categories || []).slice(0, 3).map((category) => `<span class="plugin-mini-tag">${escapeHtml(category)}</span>`).join('');
+    const cats = (plugin.categories || []).slice(0, 3).map((category) => `<a class="plugin-mini-tag plugin-category-link" href="${basePath}/?category=${encodeURIComponent(category)}" aria-label="Browse ${escapeHtml(category)} plugins">${escapeHtml(category)}</a>`).join('');
     const cover = plugin.coverImage
       ? `<img class="plugin-card-cover" src="${escapeHtml(plugin.coverImage)}" alt="${escapeHtml(plugin.title)} cover" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`
       : `<div class="plugin-card-cover-placeholder" aria-hidden="true">P</div>`;
@@ -219,7 +219,6 @@
           <h3>${escapeHtml(plugin.title)}</h3>
           <p class="plugin-author">By ${escapeHtml(plugin.authorDisplayName || 'Unknown')}</p>
           <div class="plugin-description">${renderMarkdown(plugin.description, 'plugin-card-markdown')}</div>
-          <div class="plugin-install-line"><span class="plugin-install-label">Install with</span><code>${escapeHtml(plugin.installWith)}</code></div>
           <div class="plugin-card-footer"><div class="plugin-card-metrics"><span title="Likes"><b class="metric-icon" aria-hidden="true">♡</b>${formatNumber(plugin.likesCount)}</span><span title="Views"><b class="metric-icon" aria-hidden="true">◉</b>${formatNumber(plugin.views)}</span></div><span class="plugin-command-count">${formatNumber(plugin.commandCount ?? plugin.commands?.length)} commands</span></div>
         </div>
       </article>`;
@@ -257,8 +256,32 @@
     } catch { return ''; }
   }
 
+  function updateShareMetadata(plugin) {
+    // Updates metadata for browser tabs and client-side integrations. Social crawlers
+    // usually do not execute JS; true dynamic previews on GitHub Pages need SSR/proxy.
+    const description = String(plugin.description || '').replace(/[#*_`>\[\]()]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 300);
+    const title = `${plugin.title || 'Plugin'} — Pancake Plugin Portal`;
+    document.title = title;
+    const setMeta = (selector, attr, value) => {
+      let node = document.head.querySelector(selector);
+      if (!node) { node = document.createElement('meta'); document.head.appendChild(node); }
+      node.setAttribute(attr, value);
+    };
+    setMeta('meta[name="description"]', 'content', description);
+    setMeta('meta[property="og:type"]', 'content', 'website');
+    setMeta('meta[property="og:title"]', 'content', title);
+    setMeta('meta[property="og:description"]', 'content', description);
+    setMeta('meta[property="og:url"]', 'content', window.location.href);
+    setMeta('meta[property="og:image"]', 'content', 'https://suitedxd.github.io/pancake-development-team/assets/pancake/pancake-social_02.png');
+    setMeta('meta[name="twitter:card"]', 'content', 'summary_large_image');
+    setMeta('meta[name="twitter:title"]', 'content', title);
+    setMeta('meta[name="twitter:description"]', 'content', description);
+    setMeta('meta[name="twitter:image"]', 'content', 'https://suitedxd.github.io/pancake-development-team/assets/pancake/pancake-social_02.png');
+  }
+
   function renderPluginDetail(plugin) {
-    const categories = (plugin.categories || []).map((category) => `<span class="plugin-mini-tag">${escapeHtml(category)}</span>`).join('');
+    updateShareMetadata(plugin);
+    const categories = (plugin.categories || []).map((category) => `<a class="plugin-mini-tag plugin-category-link" href="${basePath}/?category=${encodeURIComponent(category)}" aria-label="Browse ${escapeHtml(category)} plugins">${escapeHtml(category)}</a>`).join('');
     const commands = (plugin.commands || []).map((command) => `<tr><td>${escapeHtml(command.command)}</td><td>${renderMarkdown(command.description, 'command-description-markdown')}</td></tr>`).join('');
     const mediaImages = (plugin.mediaImages || []).filter((url) => typeof url === 'string' && /^https:\/\//i.test(url));
     const youtubeVideos = (plugin.youtubeVideos || []).map(youtubeEmbedUrl).filter(Boolean);
@@ -625,6 +648,10 @@
       const button = event.target.closest('[data-category-filter]');
       if (!button) return;
       state.selectedCategory = button.dataset.categoryFilter || '';
+      const categoryUrl = new URL(window.location.href);
+      if (state.selectedCategory) categoryUrl.searchParams.set('category', state.selectedCategory);
+      else categoryUrl.searchParams.delete('category');
+      history.replaceState({}, '', `${categoryUrl.pathname}${categoryUrl.search}${categoryUrl.hash}`);
       renderCategoryFilters();
       refreshCatalogue();
     });
@@ -703,6 +730,7 @@
     renderCategoryFilters();
     await refreshSession();
     const query = new URLSearchParams(window.location.search);
+    state.selectedCategory = query.get('category') || '';
     const queryPlugin = query.get('plugin');
     const pathMatch = window.location.pathname.match(new RegExp(`^${basePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/(\\d{20,30})/?$`));
     const pluginId = pathMatch?.[1] || (/^\d{20,30}$/.test(queryPlugin || '') ? queryPlugin : null);

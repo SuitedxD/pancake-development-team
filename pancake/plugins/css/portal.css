@@ -267,3 +267,8 @@
 .markdown-hint { color: var(--muted); font-size: 11px; line-height: 1.6; font-weight: 450; }
 .plugin-card[data-card-href], .portal-library-card[data-card-href] { cursor: pointer; }
 .plugin-card[data-card-href]:focus-visible, .portal-library-card[data-card-href]:focus-visible { outline: 2px solid var(--portal-accent); outline-offset: 3px; }
+
+
+/* Category tags are navigable links, including on plugin detail pages. */
+.plugin-category-link { text-decoration: none; cursor: pointer; transition: color .18s ease, border-color .18s ease, background .18s ease; }
+.plugin-category-link:hover, .plugin-category-link:focus-visible { color: var(--gold, #ffd466); border-color: rgba(255,212,102,.55); background: rgba(255,212,102,.09); outline: none; }
