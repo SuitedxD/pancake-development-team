@@ -327,7 +327,7 @@
     const fragment = template.content.cloneNode(true);
     const row = $('.command-field-row', fragment);
     $('[name="command"]', row).value = initial.command || '';
-    $('[name="description"]', row).value = initial.description || '';
+    $('[name="commandDescription"]', row).value = initial.description || '';
     $('.remove-command-button', row).addEventListener('click', () => {
       if ($$('.command-field-row', form).length <= 1) {
         notify('A plugin needs at least one command field.', 'warning');
@@ -370,7 +370,7 @@
     if (!categories.length) throw new Error('Choose at least one category.');
     const commands = $$('.command-field-row', form).map((row) => ({
       command: $('[name="command"]', row).value.trim(),
-      description: $('[name="description"]', row).value.trim()
+      description: $('[name="commandDescription"]', row).value.trim()
     }));
     if (!commands.length || commands.some((command) => !command.command || !command.description)) {
       throw new Error('Fill out every command and its description.');
