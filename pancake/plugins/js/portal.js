@@ -32,6 +32,30 @@
     })[char]);
   }
 
+  // Markdown is rendered only after sanitizing the generated HTML. If the CDN
+  // libraries are unavailable, fall back to escaped plain text rather than raw HTML.
+  function renderMarkdown(value, extraClass = '') {
+    const source = String(value ?? '').trim();
+    if (!source) return '';
+    const className = `portal-markdown${extraClass ? ` ${extraClass}` : ''}`;
+    if (window.marked && window.DOMPurify) {
+      try {
+        const parsed = window.marked.parse(source, { gfm: true, breaks: true });
+        const safeHtml = window.DOMPurify.sanitize(parsed, { USE_PROFILES: { html: true } });
+        const container = document.createElement('div');
+        container.innerHTML = safeHtml;
+        container.querySelectorAll('a[href]').forEach((link) => {
+          link.setAttribute('target', '_blank');
+          link.setAttribute('rel', 'noopener noreferrer');
+        });
+        return `<div class="${className}">${container.innerHTML}</div>`;
+      } catch (error) {
+        console.warn('Markdown rendering failed; showing escaped plain text instead.', error);
+      }
+    }
+    return `<div class="${className}">${escapeHtml(source).replace(/\r?\n/g, '<br>')}</div>`;
+  }
+
   function formatNumber(value) {
     return new Intl.NumberFormat('en-US').format(Number(value) || 0);
   }
@@ -188,16 +212,17 @@
       : `<div class="plugin-card-cover-placeholder" aria-hidden="true">P</div>`;
     const pluginUrl = `${basePath}/${encodeURIComponent(plugin.pluginId)}`;
     return `
-      <a class="plugin-card" href="${pluginUrl}" aria-label="Open plugin ${escapeHtml(plugin.title)}">
+      <article class="plugin-card" data-card-href="${escapeHtml(pluginUrl)}" tabindex="0" role="link" aria-label="Open plugin ${escapeHtml(plugin.title)}">
         <div class="plugin-card-cover-wrap">${cover}</div>
         <div class="plugin-card-content">
           <div class="plugin-card-topline"><div class="plugin-card-categories">${cats || '<span class="plugin-mini-tag">Other</span>'}</div><span class="plugin-card-open" aria-hidden="true">↗</span></div>
           <h3>${escapeHtml(plugin.title)}</h3>
           <p class="plugin-author">By ${escapeHtml(plugin.authorDisplayName || 'Unknown')}</p>
-          <p class="plugin-description">${escapeHtml(plugin.description)}</p>
+          <div class="plugin-description">${renderMarkdown(plugin.description, 'plugin-card-markdown')}</div>
+          <div class="plugin-install-line"><span class="plugin-install-label">Install with</span><code>${escapeHtml(plugin.installWith)}</code></div>
           <div class="plugin-card-footer"><div class="plugin-card-metrics"><span title="Likes"><b class="metric-icon" aria-hidden="true">♡</b>${formatNumber(plugin.likesCount)}</span><span title="Views"><b class="metric-icon" aria-hidden="true">◉</b>${formatNumber(plugin.views)}</span></div><span class="plugin-command-count">${formatNumber(plugin.commandCount ?? plugin.commands?.length)} commands</span></div>
         </div>
-      </a>`;
+      </article>`;
   }
 
   async function refreshCatalogue() {
@@ -234,7 +259,7 @@
 
   function renderPluginDetail(plugin) {
     const categories = (plugin.categories || []).map((category) => `<span class="plugin-mini-tag">${escapeHtml(category)}</span>`).join('');
-    const commands = (plugin.commands || []).map((command) => `<tr><td>${escapeHtml(command.command)}</td><td>${escapeHtml(command.description)}</td></tr>`).join('');
+    const commands = (plugin.commands || []).map((command) => `<tr><td>${escapeHtml(command.command)}</td><td>${renderMarkdown(command.description, 'command-description-markdown')}</td></tr>`).join('');
     const mediaImages = (plugin.mediaImages || []).filter((url) => typeof url === 'string' && /^https:\/\//i.test(url));
     const youtubeVideos = (plugin.youtubeVideos || []).map(youtubeEmbedUrl).filter(Boolean);
     const mediaSection = mediaImages.length || youtubeVideos.length ? `
@@ -248,7 +273,7 @@
         ${plugin.coverImage && /^https:\/\//i.test(plugin.coverImage) ? `<img class="plugin-detail-cover" src="${escapeHtml(plugin.coverImage)}" alt="${escapeHtml(plugin.title)} cover" decoding="async" referrerpolicy="no-referrer" />` : ''}
         <h1>${escapeHtml(plugin.title)}</h1>
         <p class="plugin-detail-author">By ${escapeHtml(plugin.authorDisplayName || 'Unknown')} <span aria-hidden="true">·</span> Added ${escapeHtml(formatDate(plugin.createdAt))}</p>
-        <p class="plugin-detail-description">${escapeHtml(plugin.description)}</p>
+        ${renderMarkdown(plugin.description, 'plugin-detail-markdown')}
         <div class="plugin-detail-actions">
           <button class="plugin-action-button${plugin.liked ? ' is-active' : ''}" id="detail-like-button" type="button" data-detail-like>♡ <span>${plugin.liked ? 'Liked' : 'Like'}</span></button>
           <button class="plugin-action-button${plugin.favorited ? ' is-active' : ''}" id="detail-favorite-button" type="button" data-detail-favorite>☆ <span>${plugin.favorited ? 'Saved to favorites' : 'Add to favorites'}</span></button>
@@ -269,7 +294,7 @@
           <h2 id="plugin-commands-title">Commands</h2>
           <p class="portal-panel-intro">${formatNumber(plugin.commandCount)} command${plugin.commandCount === 1 ? '' : 's'} included with this plugin.</p>
           <div class="command-table-wrap"><table class="portal-command-table"><thead><tr><th>Command(s)</th><th>Description</th></tr></thead><tbody>${commands}</tbody></table></div>
-          ${plugin.notes ? `<p class="plugin-notes">${escapeHtml(plugin.notes)}</p>` : ''}
+          ${plugin.notes ? renderMarkdown(plugin.notes, 'plugin-notes') : ''}
         </section>
       </div>
       ${mediaSection}`;
@@ -291,7 +316,7 @@
   }
 
   function renderLibraryCard(plugin) {
-    return `<a class="portal-library-card" href="${basePath}/${encodeURIComponent(plugin.pluginId)}"><h3>${escapeHtml(plugin.title)}</h3><p>By ${escapeHtml(plugin.authorDisplayName || 'Unknown')} · ${formatNumber(plugin.likesCount)} likes · ${formatNumber(plugin.views)} views</p><p>${escapeHtml(plugin.description)}</p></a>`;
+    return `<article class="portal-library-card" data-card-href="${basePath}/${encodeURIComponent(plugin.pluginId)}" tabindex="0" role="link"><h3>${escapeHtml(plugin.title)}</h3><p>By ${escapeHtml(plugin.authorDisplayName || 'Unknown')} · ${formatNumber(plugin.likesCount)} likes · ${formatNumber(plugin.views)} views</p>${renderMarkdown(plugin.description, 'library-card-markdown')}</article>`;
   }
 
   async function loadProfile() {
@@ -604,6 +629,11 @@
       refreshCatalogue();
     });
     document.addEventListener('click', async (event) => {
+      const navigableCard = event.target.closest('[data-card-href]');
+      if (navigableCard && !event.target.closest('a,button,input,textarea,select,summary,[role=button]')) {
+        window.location.assign(navigableCard.dataset.cardHref);
+        return;
+      }
       const closeButton = event.target.closest('[data-close-dialog]');
       if (closeButton) { document.getElementById(closeButton.dataset.closeDialog)?.close(); return; }
       if (event.target.closest('[data-detail-like]')) { await handleDetailAction('like'); return; }
@@ -621,6 +651,13 @@
         await adminMutation(`/api/admin/plugins/${encodeURIComponent(deleteButton.dataset.deletePlugin)}`, 'DELETE', {}, `Delete “${plugin?.title || deleteButton.dataset.deletePlugin}”? This permanently removes the plugin and its likes/favorites.`);
         return;
       }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      const card = event.target.closest?.('[data-card-href]');
+      if (!card || event.target.closest?.('a,button,input,textarea,select,[role=button]')) return;
+      event.preventDefault();
+      window.location.assign(card.dataset.cardHref);
     });
   }
 
