@@ -1,0 +1,151 @@
+<!-- pancake/plugins/index.html -->
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#ffd466" />
+  <meta name="portal-base-path" content="/pancake-development-team/pancake/plugins" />
+  <meta name="api-base" content="https://pancake-development-team-api.onrender.com" />
+  <title>Plugin Portal — Pancake</title>
+  <meta name="description" content="Discover, save, and like plugins for Pancake." />
+  <link rel="icon" type="image/png" href="../../assets/favicon.png" />
+  <link rel="stylesheet" href="../../css/style.css" />
+  <link rel="stylesheet" href="css/portal.css" />
+</head>
+<body>
+  <main class="app-root portal-root" id="top">
+    <div class="portal-glow portal-glow-a" aria-hidden="true"></div>
+    <div class="portal-glow portal-glow-b" aria-hidden="true"></div>
+
+    <div class="shell">
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a class="brand" href="../../#top" aria-label="Pancake Development Team home">
+          <span class="brand-mark" aria-hidden="true"><img src="../../assets/pancake_team_icon_01.png" alt="" /></span>
+          <span class="brand-name">Pancake Development Team</span>
+        </a>
+        <div class="nav-links">
+          <a href="../../#about-us">About Us</a>
+          <a href="../../#projects">Projects</a>
+        </div>
+      </nav>
+    </div>
+
+    <div class="blueprint-zone" data-nav-theme="dark">
+      <div class="shell portal-shell">
+        <section class="portal-hero" aria-labelledby="portal-title">
+          <div class="kicker">Pancake Development Team</div>
+          <div class="portal-hero-row">
+            <div class="portal-hero-copy">
+              <h1 id="portal-title" class="portal-title">Plugin Portal<span>.</span></h1>
+              <p class="portal-intro">Discover plugins, explore their commands, and build the Pancake setup that fits your server.</p>
+            </div>
+            <div class="portal-user-actions">
+              <button class="btn btn-secondary portal-button" id="login-button" type="button">Sign in with Discord <span aria-hidden="true">↗</span></button>
+              <button class="portal-user-button" id="profile-button" type="button" hidden>My library</button>
+              <button class="portal-user-button" id="admin-button" type="button" hidden>Admin panel</button>
+              <button class="portal-user-button" id="logout-button" type="button" hidden>Log out</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="portal-toolbar" aria-label="Find plugins">
+          <label class="portal-search-wrap" for="plugin-search">
+            <span class="portal-search-icon" aria-hidden="true">⌕</span>
+            <input id="plugin-search" type="search" placeholder="Search plugins, commands, or tags…" autocomplete="off" />
+            <kbd>⌘ / Ctrl K</kbd>
+          </label>
+          <label class="portal-sort-wrap" for="plugin-sort">
+            <span class="sr-only">Sort plugins</span>
+            <select id="plugin-sort">
+              <option value="newest">Recently added</option>
+              <option value="popular">Most liked</option>
+              <option value="views">Most viewed</option>
+              <option value="az">Name A–Z</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="portal-category-section" aria-labelledby="categories-title">
+          <div class="portal-section-caption">
+            <h2 id="categories-title">Explore categories</h2>
+            <span id="category-count">16 categories</span>
+          </div>
+          <div class="portal-categories" id="category-filters" aria-label="Filter by category"></div>
+        </section>
+
+        <section class="portal-catalogue" id="catalogue-view" aria-labelledby="catalogue-title">
+          <div class="portal-section-heading">
+            <div>
+              <div class="kicker">Made for your server</div>
+              <h2 id="catalogue-title">Browse plugins</h2>
+              <p id="results-summary">Loading plugins…</p>
+            </div>
+          </div>
+          <div class="portal-grid" id="plugin-grid" aria-live="polite">
+            <div class="portal-empty-state"><span class="portal-loader" aria-hidden="true"></span><p>Loading the catalogue…</p></div>
+          </div>
+          <div class="portal-notice" id="catalogue-notice" role="status" hidden></div>
+        </section>
+
+        <section class="portal-detail" id="detail-view" hidden aria-live="polite"></section>
+        <section class="portal-profile" id="profile-view" hidden aria-labelledby="profile-title"></section>
+        <section class="portal-admin" id="admin-view" hidden aria-labelledby="admin-title"></section>
+
+        <footer aria-label="Pancake Development Team footer" class="portal-footer">
+          <div class="footer-line">
+            <span>© <span id="year"></span> Pancake Development Team</span>
+            <div class="footer-contact" aria-label="Contact">
+              <a href="https://discord.gg/V2psxDQdhZ" target="_blank" rel="noopener noreferrer" aria-label="Support Server">Support Server</a>
+              <span aria-hidden="true">·</span>
+              <a href="mailto:pancakebot.team@gmail.com">pancakebot.team@gmail.com</a>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </div>
+  </main>
+
+
+  <dialog class="portal-dialog portal-dialog-wide" id="admin-auth-dialog" aria-labelledby="admin-auth-title">
+    <div class="dialog-header">
+      <div><div class="kicker">Restricted access</div><h2 id="admin-auth-title">Admin verification</h2></div>
+      <button class="dialog-close" type="button" data-close-dialog="admin-auth-dialog" aria-label="Close">×</button>
+    </div>
+    <p class="dialog-copy">Enter your separate Plugin Portal admin key. Discord login alone is not enough. For security, this verification is requested again for every admin change.</p>
+    <form id="admin-auth-form" class="portal-form">
+      <label class="form-field"><span>Site admin username</span><input name="username" type="text" autocomplete="username" minlength="3" maxlength="64" required /></label>
+      <label class="form-field"><span>Site admin password</span><input name="password" type="password" autocomplete="current-password" minlength="12" maxlength="256" required /></label>
+      <div class="form-error" id="admin-auth-error" role="alert" hidden></div>
+      <div class="form-actions"><button class="btn btn-secondary" type="button" data-close-dialog="admin-auth-dialog">Cancel</button><button class="btn btn-primary" type="submit">Verify access <span aria-hidden="true">↗</span></button></div>
+    </form>
+  </dialog>
+
+  <template id="plugin-fields-template">
+    <div class="form-field"><label>Plugin title<input name="title" type="text" minlength="2" maxlength="100" required /></label></div>
+    <div class="form-field admin-author-field"><label>Author Discord ID<input name="authorId" type="text" inputmode="numeric" pattern="[0-9]{15,22}" placeholder="Discord user ID" required /></label><small>Only the numeric Discord ID is stored. The displayed author name is fetched from the users database.</small></div>
+    <div class="form-field"><label>Description<textarea name="description" rows="3" minlength="5" maxlength="2000" required></textarea></label></div>
+    <div class="form-field"><label>Install with<input name="installWith" type="text" maxlength="180" placeholder="/install plugin:example" required /></label></div>
+    <div class="form-field"><label>Cover image URL<input name="coverImage" type="url" maxlength="2048" placeholder="https://example.com/plugin-cover.png" /></label><small>Optional. Use a direct HTTPS image URL.</small></div>
+    <fieldset class="form-field category-fieldset"><legend>Categories</legend><p class="field-hint">Choose at least one category.</p><div class="form-category-options"></div></fieldset>
+    <div class="commands-editor"><div class="commands-editor-header"><div><h3>Commands</h3><p class="field-hint">The command count is calculated from these fields.</p></div><span class="command-count-badge">0 commands</span></div><div class="command-fields"></div><button class="portal-user-button add-command-button" type="button">＋ Add command</button></div>
+    <div class="form-field"><label>Additional image URLs<textarea name="mediaImages" rows="3" maxlength="10000" placeholder="One direct HTTPS image URL per line"></textarea></label><small>Optional gallery images. One URL per line, up to 12 images.</small></div>
+    <div class="form-field"><label>YouTube video URLs<textarea name="youtubeVideos" rows="3" maxlength="6000" placeholder="https://www.youtube.com/watch?v=…"></textarea></label><small>Optional videos. Add one YouTube or youtu.be URL per line, up to 5 videos.</small></div>
+    <div class="form-field"><label>Additional notes<textarea name="notes" rows="3" maxlength="4000" placeholder="Optional notes, links, or extra instructions."></textarea></label></div>
+    <div class="form-error" role="alert" hidden></div>
+    <div class="form-actions"><button class="btn btn-secondary cancel-form-button" type="button">Cancel</button><button class="btn btn-primary save-plugin-button" type="submit">Save plugin</button></div>
+  </template>
+
+  <template id="command-field-template">
+    <div class="command-field-row">
+      <div class="form-field"><label>Command<input name="command" type="text" maxlength="180" placeholder="/example (optional argument)" required /></label></div>
+      <div class="form-field"><label>Description<textarea name="description" rows="2" maxlength="600" required></textarea></label></div>
+      <button class="remove-command-button" type="button" aria-label="Remove command">×</button>
+    </div>
+  </template>
+
+  <script src="../../js/main.js"></script>
+  <script src="js/portal.js" defer></script>
+</body>
+</html>

@@ -1,168 +1,105 @@
-const year = document.getElementById('year');
-if (year) year.textContent = new Date().getFullYear();
-
-
-const nav = document.querySelector(
-  'nav[aria-label="Primary navigation"]'
-);
-
-const hero = document.querySelector('.hero');
-
-let lastScrollY = window.scrollY;
-let scrollDelta = 0;
-let lastDirection = 0;
-let rafId = 0;
-
-function updateNavigation() {
-  const currentY = window.scrollY;
-  const delta = currentY - lastScrollY;
-  const direction = Math.sign(delta);
-
-  if (!nav) {
-    rafId = 0;
-    lastScrollY = currentY;
-    return;
-  }
-
-  // En la parte superior, el encabezado siempre está visible.
-  if (currentY <= 24) {
-    nav.classList.remove('nav-hidden');
-    scrollDelta = 0;
-    lastDirection = 0;
-  } else if (direction !== 0) {
-    // Reinicia la acumulación si cambia la dirección.
-    if (direction !== lastDirection) {
-      scrollDelta = 0;
-    }
-
-    scrollDelta += delta;
-
-    // Oculta al bajar al menos 8 píxeles acumulados.
-    if (scrollDelta >= 8) {
-      nav.classList.add('nav-hidden');
-      scrollDelta = 0;
-    }
-
-    // Muestra al subir al menos 8 píxeles acumulados.
-    else if (scrollDelta <= -8) {
-      nav.classList.remove('nav-hidden');
-      scrollDelta = 0;
-    }
-
-    lastDirection = direction;
-  }
-
-  // Conserva el cambio de apariencia al entrar
-  // en las secciones oscuras de la página principal.
-  if (hero) {
-    nav.classList.toggle(
-      'nav-on-dark',
-      hero.getBoundingClientRect().bottom <= 70
-    );
-  }
-
-  lastScrollY = currentY;
-  rafId = 0;
-}
-
-if (nav) {
-  window.addEventListener(
-    'scroll',
-    () => {
-      if (!rafId) {
-        rafId = window.requestAnimationFrame(updateNavigation);
-      }
-    },
-    { passive: true }
-  );
-
-  updateNavigation();
-}
-
-
-for (const card of document.querySelectorAll('.product-card')) {
-  const select = () => {
-    for (const item of document.querySelectorAll('.product-card')) item.classList.remove('active');
-    card.classList.add('active');
-  };
-
-  card.addEventListener('click', select);
-  card.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      select();
-    }
-  });
-}
-
+// js/main.js — shared site behavior
 (() => {
-  const nav = document.querySelector(
-    'nav[aria-label="Primary navigation"]'
+  'use strict';
+
+  // Supports both current footers: #year and the project template's [data-year].
+  const currentYear = String(new Date().getFullYear());
+  document.querySelectorAll('#year, [data-year]').forEach((element) => {
+    element.textContent = currentYear;
+  });
+
+  const nav = document.querySelector('.site-nav');
+  const darkSections = Array.from(
+    document.querySelectorAll('[data-nav-theme="dark"]')
   );
 
-  const darkSections = document.querySelectorAll(
-    '[data-nav-theme="dark"]'
+  if (nav) {
+    let lastScrollY = window.scrollY;
+    let scrollDelta = 0;
+    let lastDirection = 0;
+    let framePending = false;
+
+    const updateNavigation = () => {
+      const currentY = window.scrollY;
+      const delta = currentY - lastScrollY;
+      const direction = Math.sign(delta);
+
+      // Keep the header visible at the top and use the same threshold everywhere.
+      if (currentY <= 24) {
+        nav.classList.remove('nav-hidden');
+        scrollDelta = 0;
+        lastDirection = 0;
+      } else if (direction !== 0) {
+        if (direction !== lastDirection) scrollDelta = 0;
+        scrollDelta += delta;
+
+        if (scrollDelta >= 8) {
+          nav.classList.add('nav-hidden');
+          scrollDelta = 0;
+        } else if (scrollDelta <= -8) {
+          nav.classList.remove('nav-hidden');
+          scrollDelta = 0;
+        }
+
+        lastDirection = direction;
+      }
+
+      // Switch the same glass/background and text treatment over marked dark sections.
+      const navHeight = nav.offsetHeight;
+      const themeThreshold = Math.max(navHeight, 58) + 12;
+      const isOverDarkSection = darkSections.some((section) => {
+        const rect = section.getBoundingClientRect();
+        // Use offsetHeight, not the transformed rectangle: the nav may be hidden above the viewport.
+        // The 70px threshold aligns with the former home-page theme change.
+        return rect.top <= themeThreshold && rect.bottom > navHeight;
+      });
+      nav.classList.toggle('nav-on-dark', isOverDarkSection);
+
+      lastScrollY = currentY;
+      framePending = false;
+    };
+
+    const scheduleNavigationUpdate = () => {
+      if (framePending) return;
+      framePending = true;
+      window.requestAnimationFrame(updateNavigation);
+    };
+
+    window.addEventListener('scroll', scheduleNavigationUpdate, { passive: true });
+    window.addEventListener('resize', scheduleNavigationUpdate);
+    updateNavigation();
+  }
+
+  // Product cards are real links; preserve their optional clicked/active visual state.
+  const productCards = Array.from(document.querySelectorAll('.product-card'));
+  productCards.forEach((card) => {
+    card.addEventListener('click', () => {
+      productCards.forEach((item) => item.classList.remove('active'));
+      card.classList.add('active');
+    });
+  });
+
+  // Pancake page section reveals; the rest of the site is unaffected.
+  const revealSections = document.querySelectorAll(
+    '.pancake-teaser, .pancake-documentation, .pancake-showcase, .pancake-final-cta'
   );
 
-  if (!nav || !darkSections.length) return;
-
-  function updateNavTheme() {
-    const navBottom = nav.getBoundingClientRect().bottom;
-
-    const isOverDarkSection = [...darkSections].some(section => {
-      const rect = section.getBoundingClientRect();
-
-      return rect.top <= navBottom && rect.bottom > navBottom;
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!prefersReducedMotion && 'IntersectionObserver' in window && revealSections.length) {
+    const revealObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      });
+    }, {
+      threshold: 0.12,
+      rootMargin: '0px 0px -35px 0px'
     });
 
-    nav.classList.toggle(
-      "nav-on-dark-text",
-      isOverDarkSection
-    );
+    revealSections.forEach((section) => {
+      section.classList.add('reveal-on-scroll');
+      revealObserver.observe(section);
+    });
   }
-
-  window.addEventListener("scroll", updateNavTheme, {
-    passive: true
-  });
-
-  window.addEventListener("resize", updateNavTheme);
-
-  updateNavTheme();
-})();
-
-(() => {
-  const sections = document.querySelectorAll(
-    ".pancake-teaser, " +
-    ".pancake-documentation, " +
-    ".pancake-showcase, " +
-    ".pancake-final-cta"
-  );
-
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    return;
-  }
-
-  if (!("IntersectionObserver" in window)) {
-    return;
-  }
-
-  const revealObserver = new IntersectionObserver(
-    (entries, observer) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("is-visible");
-          observer.unobserve(entry.target);
-        }
-      });
-    },
-    {
-      threshold: 0.12,
-      rootMargin: "0px 0px -35px 0px"
-    }
-  );
-
-  sections.forEach((section) => {
-    section.classList.add("reveal-on-scroll");
-    revealObserver.observe(section);
-  });
 })();
