@@ -32,8 +32,6 @@
     })[char]);
   }
 
-  // Markdown is rendered only after sanitizing the generated HTML. If the CDN
-  // libraries are unavailable, fall back to escaped plain text rather than raw HTML.
   function renderMarkdown(value, extraClass = '') {
     const source = String(value ?? '').trim();
     if (!source) return '';
@@ -257,10 +255,8 @@
   }
 
   function updateShareMetadata(plugin) {
-    // Updates metadata for browser tabs and client-side integrations. Social crawlers
-    // usually do not execute JS; true dynamic previews on GitHub Pages need SSR/proxy.
     const description = String(plugin.description || '').replace(/[#*_`>\[\]()]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 300);
-    const title = `${plugin.title || 'Plugin'} — Pancake Plugin Portal`;
+    const title = `${plugin.title || 'Plugin'} — Plugin Portal`;
     document.title = title;
     const setMeta = (selector, attr, value) => {
       let node = document.head.querySelector(selector);
@@ -576,7 +572,6 @@
   }
 
   async function refreshAdminDashboard(adminAuth) {
-    // Re-verify the admin key after a mutation, without opening a second prompt for the same operation.
     const dashboard = await api('/api/admin/access', { method: 'POST', body: { adminAuth } });
     state.adminDashboard = { plugins: dashboard.plugins };
     renderAdminPanel();
@@ -726,7 +721,7 @@
     try {
       const config = await api('/api/portal-config');
       if (Array.isArray(config.categories) && config.categories.length) state.categories = config.categories;
-    } catch { /* The fallback category list keeps the frontend usable before backend setup. */ }
+    } catch { }
     renderCategoryFilters();
     await refreshSession();
     const query = new URLSearchParams(window.location.search);
