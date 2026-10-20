@@ -354,7 +354,7 @@
         <div class="plugin-detail-actions">
           <button class="plugin-action-button${plugin.liked ? ' is-active' : ''}" id="detail-like-button" type="button" data-detail-like>♡ <span>${plugin.liked ? 'Liked' : 'Like'}</span></button>
           <button class="plugin-action-button${plugin.favorited ? ' is-active' : ''}" id="detail-favorite-button" type="button" data-detail-favorite>☆ <span>${plugin.favorited ? 'Saved to favorites' : 'Add to favorites'}</span></button>
-          ${state.user && String(state.user.discordId) === String(plugin.authorId) ? '<button class="plugin-action-button" type="button" data-author-edit>✎ <span>Edit plugin</span></button>' : ''}
+          ${state.user && String(state.user.discordId) === String(plugin.authorId) ? `<button class="plugin-action-button" type="button" data-author-edit>✎ <span>Edit plugin</span></button>${plugin.pendingChange?.fields ? '<button class="plugin-action-button" type="button" data-preview-author-change>◉ <span>Preview unreviewed changes</span></button>' : ''}` : ''}
           <button class="plugin-action-button" type="button" data-share-plugin="${escapeHtml(plugin.pluginId)}">↗ <span>Share</span></button>
           <div class="plugin-detail-metrics"><span><strong id="detail-like-count">${formatNumber(plugin.likesCount)}</strong> likes</span><span><strong>${formatNumber(plugin.views)}</strong> views</span><span><strong>${formatNumber(plugin.commandCount)}</strong> commands</span></div>
         </div>
@@ -587,13 +587,44 @@
       const form = $('#author-edit-form'); configurePluginForm(form, { initialData: plugin, actionLabel: 'Submit for review', authorEditing: true });
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        if (!form.reportValidity()) return;
+        if (form.dataset.submitting === 'true' || !form.reportValidity()) return;
+
+        let payload;
         try {
-          const payload = getFormPayload(form);
-          await api(`/api/plugins/${encodeURIComponent(state.authorEditingPluginId)}/change-request`, { method: 'POST', body: payload });
+          payload = getFormPayload(form);
+        } catch (error) {
+          setFormError(form, error.message);
+          return;
+        }
+
+        const submitButton = $('.save-plugin-button', form);
+        form.dataset.submitting = 'true';
+        form.setAttribute('aria-busy', 'true');
+        setFormError(form, '');
+        if (submitButton) {
+          submitButton.disabled = true;
+          submitButton.textContent = 'Submitting for review…';
+        }
+
+        const pluginId = state.authorEditingPluginId;
+        try {
+          const result = await api(`/api/plugins/${encodeURIComponent(pluginId)}/change-request`, { method: 'POST', body: payload });
+          if (state.currentPlugin && String(state.currentPlugin.pluginId) === String(pluginId)) {
+            state.currentPlugin.pendingChange = result.pendingChange || { fields: payload };
+            renderPluginDetail(state.currentPlugin);
+          }
           dialog.close();
           notify('Change request submitted for admin review.', 'success');
-        } catch (error) { setFormError(form, error.message); }
+        } catch (error) {
+          setFormError(form, error.message);
+        } finally {
+          form.dataset.submitting = 'false';
+          form.removeAttribute('aria-busy');
+          if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Submit for review';
+          }
+        }
       });
     } else {
       configurePluginForm($('#author-edit-form'), { initialData: plugin, actionLabel: 'Submit for review', authorEditing: true });
@@ -897,6 +928,17 @@
       if (closeButton) { document.getElementById(closeButton.dataset.closeDialog)?.close(); return; }
       if (event.target.closest('[data-detail-like]')) { await handleDetailAction('like'); return; }
       if (event.target.closest('[data-author-edit]')) { if (state.currentPlugin) openAuthorEditor(state.currentPlugin); return; }
+      if (event.target.closest('[data-preview-author-change]')) {
+        const plugin = state.currentPlugin;
+        if (plugin?.pendingChange?.fields) {
+          openPluginPreview(plugin.pendingChange.fields, {
+            title: `Unreviewed changes — ${plugin.pendingChange.fields.title || plugin.title}`,
+            pluginId: plugin.pluginId,
+            published: plugin
+          });
+        }
+        return;
+      }
       if (event.target.closest('[data-detail-favorite]')) { await handleDetailAction('favorite'); return; }
       const copyInstall = event.target.closest('[data-copy-install]');
       if (copyInstall) { try { await navigator.clipboard.writeText(copyInstall.dataset.copyInstall || ''); notify('Install command copied.', 'success'); } catch { notify('Could not access the clipboard. Copy the command manually.', 'error'); } return; }
@@ -915,7 +957,7 @@
       if (shareButton) {
         const pluginId = shareButton.dataset.sharePlugin;
         const shareUrl = `${apiBase}/share/${encodeURIComponent(pluginId)}${window.location.hash || ''}`;
-        try { await navigator.clipboard.writeText(shareUrl); notify('Share link copied.', 'success'); }
+        try { await navigator.clipboard.writeText(shareUrl); notify('Share link copied to clipboard.', 'success'); }
         catch { window.prompt('Copy this plugin share link:', shareUrl); }
         return;
       }
