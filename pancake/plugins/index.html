@@ -45,7 +45,7 @@
     <div class="blueprint-zone" data-nav-theme="dark">
       <div class="shell portal-shell">
         <section class="portal-hero" aria-labelledby="portal-title">
-          <div class="kicker">Pancake</div>
+          <a class="kicker portal-home-kicker" href="../index.html" aria-label="Return to the Pancake home page">PANCAKE</a>
           <div class="portal-hero-row">
             <div class="portal-hero-copy">
               <h1 id="portal-title" class="portal-title">Plugin <span>Portal</span></h1>
@@ -189,7 +189,7 @@
       <div><div class="kicker">Restricted access</div><h2 id="admin-auth-title">Admin verification</h2></div>
       <button class="dialog-close" type="button" data-close-dialog="admin-auth-dialog" aria-label="Close">×</button>
     </div>
-    <p class="dialog-copy">Enter your separate Plugin Portal admin key. Discord login alone is not enough. For security, this verification is requested again for every admin change.</p>
+    <p class="dialog-copy">Enter your separate Plugin Portal admin key. Discord login alone is not enough. This verification is required when you enter the admin panel. You will not need to re-enter it for every change.</p>
     <form id="admin-auth-form" class="portal-form">
       <label class="form-field"><span>Site admin username</span><input name="username" type="text" autocomplete="username" minlength="3" maxlength="64" required /></label>
       <label class="form-field"><span>Site admin password</span><input name="password" type="password" autocomplete="current-password" minlength="12" maxlength="256" required /></label>
@@ -203,14 +203,16 @@
     <div class="form-field admin-author-field"><label>Author Discord ID<input name="authorId" type="text" inputmode="numeric" pattern="[0-9]{15,22}" placeholder="Discord user ID" required /></label><small>Only the numeric Discord ID is stored. The displayed author name is fetched from the users database.</small></div>
     <div class="form-field"><label>Description<textarea name="description" rows="3" minlength="5" maxlength="2000" required></textarea></label></div>
     <div class="form-field"><label>Install with<input name="installWith" type="text" maxlength="180" placeholder="/install plugin:example" required /></label></div>
-    <div class="form-field"><label>Cover image URL<input name="coverImage" type="url" maxlength="2048" placeholder="https://example.com/plugin-cover.png" /></label><small>Optional. Use a direct HTTPS image URL.</small></div>
+    <div class="form-field"><label>Plugin version<input name="version" type="text" maxlength="80" placeholder="e.g. 1.0.0" /></label><small>Display-only text; it does not change automatically.</small></div>
+    <div class="form-field"><label>Visibility<select name="visibility"><option value="public">Everyone (public)</option><option value="admin">Admin panel only</option></select></label><small>You can change this setting whenever you edit the plugin.</small></div>
+    <div class="form-field"><label>Cover image URL<input name="coverImage" type="url" maxlength="2048" placeholder="https://example.com/plugin-cover.png" /></label><small>Optional. Use a direct HTTPS image URL; this is also used for social previews.</small></div>
     <fieldset class="form-field category-fieldset"><legend>Categories</legend><p class="field-hint">Choose at least one category.</p><div class="form-category-options"></div></fieldset>
     <div class="commands-editor"><div class="commands-editor-header"><div><h3>Commands</h3><p class="field-hint">The command count is calculated from these fields.</p></div><span class="command-count-badge">0 commands</span></div><div class="command-fields"></div><button class="portal-user-button add-command-button" type="button">＋ Add command</button></div>
     <div class="form-field"><label>Additional image URLs<textarea name="mediaImages" rows="3" maxlength="10000" placeholder="One direct HTTPS image URL per line"></textarea></label><small>Optional gallery images. One URL per line, up to 12 images.</small></div>
     <div class="form-field"><label>YouTube video URLs<textarea name="youtubeVideos" rows="3" maxlength="6000" placeholder="https://www.youtube.com/watch?v=…"></textarea></label><small>Optional videos. Add one YouTube or youtu.be URL per line, up to 5 videos.</small></div>
     <div class="form-field"><label>Additional notes<textarea name="notes" rows="10" placeholder="Optional notes, links, or extra instructions."></textarea></label></div>
     <div class="form-error" role="alert" hidden></div>
-    <div class="form-actions"><button class="btn btn-secondary cancel-form-button" type="button">Cancel</button><button class="btn btn-primary save-plugin-button" type="submit">Save plugin</button></div>
+    <div class="form-actions"><button class="btn btn-secondary cancel-form-button" type="button">Cancel</button><button class="btn btn-secondary preview-plugin-button" type="button">Preview</button><button class="btn btn-secondary save-draft-button" type="button">Save changes</button><button class="btn btn-primary save-plugin-button" type="submit">Publish changes</button></div>
   </template>
 
   <template id="command-field-template">

@@ -6,7 +6,7 @@
   const basePath = (document.querySelector('meta[name="portal-base-path"]')?.content || '/pancake/plugins').replace(/\/$/, '');
   const apiBase = (document.querySelector('meta[name="api-base"]')?.content || '').trim().replace(/\/$/, '');
   const accessTokenKey = 'pancakePluginPortalAccessToken';
-  const adminAuthKey = 'pancakePluginPortalAdminAuth';
+  const anonymousViewerKey = 'pancakePluginPortalViewerId';
   const categoriesFallback = [
     'Fun', 'Moderation', 'Utility', 'Media', 'Social', 'Info', 'Tools', 'Loggin',
     'Security', 'Only Admin', 'Permissions', 'Levels', 'Roles', 'Messages', 'Experimental', 'Other'
@@ -23,8 +23,11 @@
     currentPlugin: null,
     adminDashboard: null,
     editingPluginId: null,
+    editingDraftId: null,
+    authorEditingPluginId: null,
     adminAuthResolver: null,
-    adminCredentials: null
+    currentMode: 'catalogue',
+    adminPanelVerified: false
   };
 
   const $ = (selector, root = document) => root.querySelector(selector);
@@ -46,11 +49,29 @@
         const safeHtml = window.DOMPurify.sanitize(parsed, { USE_PROFILES: { html: true } });
         const container = document.createElement('div');
         container.innerHTML = safeHtml;
+        const usedSlugs = new Set();
         container.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach((heading) => {
-          const slug = heading.textContent.trim().toLowerCase().replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-').replace(/-+/g, '-');
-          if (slug) { heading.id = slug; const anchor = document.createElement('a'); anchor.className = 'markdown-heading-anchor'; anchor.href = `#${slug}`; anchor.setAttribute('aria-label', `Link to ${heading.textContent.trim()}`); anchor.textContent = ' #'; heading.append(anchor); }
+          const baseSlug = heading.textContent.trim().toLowerCase().replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+          if (!baseSlug) return;
+          const isNotesSection = extraClass.split(/\s+/).includes('plugin-notes');
+          const scope = extraClass.split(/\s+/).filter(Boolean).join('-').replace(/[^a-z0-9-]/gi, '') || 'markdown';
+          const prefixedSlug = isNotesSection ? baseSlug : `${scope}-${baseSlug}`;
+          let slug = prefixedSlug;
+          let suffix = 2;
+          while (usedSlugs.has(slug)) slug = `${prefixedSlug}-${suffix++}`;
+          usedSlugs.add(slug);
+          heading.id = slug;
+          const anchor = document.createElement('a');
+          anchor.className = 'markdown-heading-anchor';
+          anchor.href = `#${slug}`;
+          anchor.setAttribute('aria-label', `Copyable link to ${heading.textContent.trim()}`);
+          anchor.setAttribute('title', `Link to ${heading.textContent.trim()}`);
+          anchor.textContent = ' #';
+          heading.append(anchor);
         });
         container.querySelectorAll('a[href]').forEach((link) => {
+          const href = link.getAttribute('href') || '';
+          if (href.startsWith('#')) return;
           link.setAttribute('target', '_blank');
           link.setAttribute('rel', 'noopener noreferrer');
         });
@@ -73,9 +94,24 @@
     return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
   }
 
+  function getAnonymousViewerId() {
+    try {
+      let id = localStorage.getItem(anonymousViewerKey);
+      if (!id) {
+        id = window.crypto?.randomUUID ? window.crypto.randomUUID() : `pv-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+        localStorage.setItem(anonymousViewerKey, id);
+      }
+      return id;
+    } catch {
+      return '';
+    }
+  }
+
   async function api(path, options = {}) {
     const method = String(options.method || 'GET').toUpperCase();
     const headers = new Headers(options.headers || {});
+    const viewerId = getAnonymousViewerId();
+    if (viewerId) headers.set('X-Portal-Viewer', viewerId);
     let body = options.body;
     if (body !== undefined && body !== null && typeof body !== 'string' && !(body instanceof FormData)) {
       headers.set('Content-Type', 'application/json');
@@ -95,7 +131,9 @@
       if (response.status === 401 && !path.startsWith('/api/admin/')) {
         // The caller can decide whether to start Discord login.
       }
-      throw new Error(data.error || `Request failed (${response.status}).`);
+      const error = new Error(data.error || `Request failed (${response.status}).`);
+      error.status = response.status;
+      throw error;
     }
     return data;
   }
@@ -140,7 +178,11 @@
   }
 
   function showMode(mode) {
-    if (mode !== 'admin') state.adminCredentials = null;
+    if (state.currentMode === 'admin' && mode !== 'admin') {
+      state.adminPanelVerified = false;
+      api('/api/admin/leave', { method: 'POST', body: {} }).catch(() => {});
+    }
+    state.currentMode = mode;
     const catalogueMode = mode === 'catalogue';
     $('.portal-toolbar').hidden = !catalogueMode;
     $('.portal-category-section').hidden = !catalogueMode;
@@ -164,6 +206,13 @@
       updateAuthButtons();
       return result;
     } catch (error) {
+      if (error.status === 401 || error.status === 403) {
+        state.accessToken = '';
+        state.user = null;
+        state.canAccessAdmin = false;
+        localStorage.removeItem(accessTokenKey);
+        updateAuthButtons();
+      }
       console.warn('Plugin Portal API is not reachable yet:', error.message);
       $('#plugin-grid').innerHTML = emptyState(
         'Portal backend not connected',
@@ -217,7 +266,7 @@
     const cover = plugin.coverImage
       ? `<img class="plugin-card-cover" src="${escapeHtml(plugin.coverImage)}" alt="${escapeHtml(plugin.title)} cover" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`
       : `<div class="plugin-card-cover-placeholder" aria-hidden="true">P</div>`;
-    const pluginUrl = `${basePath}/${encodeURIComponent(plugin.pluginId)}`;
+    const pluginUrl = `${basePath}/?plugin=${encodeURIComponent(plugin.pluginId)}`;
     return `
       <article class="plugin-card" data-card-href="${escapeHtml(pluginUrl)}" tabindex="0" role="link" aria-label="Open plugin ${escapeHtml(plugin.title)}">
         <div class="plugin-card-cover-wrap">${cover}</div>
@@ -276,7 +325,7 @@
     setMeta('meta[property="og:type"]', 'content', 'website');
     setMeta('meta[property="og:title"]', 'content', title);
     setMeta('meta[property="og:description"]', 'content', description);
-    setMeta('meta[property="og:url"]', 'content', window.location.href);
+    setMeta('meta[property="og:url"]', 'content', `${apiBase}/share/${encodeURIComponent(plugin.pluginId)}`);
     setMeta('meta[property="og:image"]', 'content', plugin.coverImage || 'https://suitedxd.github.io/pancake-development-team/assets/pancake/pancake-social_02.png');
     setMeta('meta[name="twitter:card"]', 'content', 'summary_large_image');
     setMeta('meta[name="twitter:title"]', 'content', title);
@@ -305,6 +354,8 @@
         <div class="plugin-detail-actions">
           <button class="plugin-action-button${plugin.liked ? ' is-active' : ''}" id="detail-like-button" type="button" data-detail-like>♡ <span>${plugin.liked ? 'Liked' : 'Like'}</span></button>
           <button class="plugin-action-button${plugin.favorited ? ' is-active' : ''}" id="detail-favorite-button" type="button" data-detail-favorite>☆ <span>${plugin.favorited ? 'Saved to favorites' : 'Add to favorites'}</span></button>
+          ${state.user && String(state.user.discordId) === String(plugin.authorId) ? '<button class="plugin-action-button" type="button" data-author-edit>✎ <span>Edit plugin</span></button>' : ''}
+          <button class="plugin-action-button" type="button" data-share-plugin="${escapeHtml(plugin.pluginId)}">↗ <span>Share</span></button>
           <div class="plugin-detail-metrics"><span><strong id="detail-like-count">${formatNumber(plugin.likesCount)}</strong> likes</span><span><strong>${formatNumber(plugin.views)}</strong> views</span><span><strong>${formatNumber(plugin.commandCount)}</strong> commands</span></div>
         </div>
       </header>
@@ -327,6 +378,13 @@
       </div>
       ${mediaSection}`;
     showMode('detail');
+    if (window.location.hash) {
+      setTimeout(() => {
+        let targetId = window.location.hash.slice(1);
+        try { targetId = decodeURIComponent(targetId); } catch { }
+        document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 40);
+    }
   }
 
   async function loadPluginDetail(pluginId) {
@@ -344,7 +402,7 @@
   }
 
   function renderLibraryCard(plugin) {
-    return `<article class="portal-library-card" data-card-href="${basePath}/${encodeURIComponent(plugin.pluginId)}" tabindex="0" role="link"><h3>${escapeHtml(plugin.title)}</h3><p>By ${escapeHtml(plugin.authorDisplayName || 'Unknown')} · ${formatNumber(plugin.likesCount)} likes · ${formatNumber(plugin.views)} views</p>${renderMarkdown(plugin.description, 'library-card-markdown')}</article>`;
+    return `<article class="portal-library-card" data-card-href="${basePath}/?plugin=${encodeURIComponent(plugin.pluginId)}" tabindex="0" role="link"><h3>${escapeHtml(plugin.title)}</h3><p>By ${escapeHtml(plugin.authorDisplayName || 'Unknown')} · ${formatNumber(plugin.likesCount)} likes · ${formatNumber(plugin.views)} views</p>${renderMarkdown(plugin.description, 'library-card-markdown')}</article>`;
   }
 
   async function loadProfile() {
@@ -354,7 +412,8 @@
     try {
       const data = await api('/api/profile');
       $('#profile-view').innerHTML = `
-        <div class="portal-page-heading"><div><div class="kicker">Your account</div><h1 id="profile-title">My library</h1><p>Signed in as ${escapeHtml(state.user.displayName || 'Unknown')}. Your profile only shows the plugins you liked or saved.</p></div><button class="portal-user-button" type="button" data-back-catalogue>← Browse plugins</button></div>
+        <div class="portal-page-heading"><div><div class="kicker">Your account</div><h1 id="profile-title">My library</h1><p>Browse your favorites, liked plugins, and published plugins you authored.</p></div><button class="portal-user-button" type="button" data-back-catalogue>← Browse plugins</button></div>
+        <section class="portal-library-section"><h2>Published by you <span class="plugin-command-count">${(data.authored || []).length}</span></h2><div class="portal-library-grid">${(data.authored || []).length ? data.authored.map(renderLibraryCard).join('') : emptyState('No published plugins yet', 'Plugins authored by your Discord account will appear here.')}</div></section>
         <section class="portal-library-section"><h2>Saved favorites <span class="plugin-command-count">${data.favorites.length}</span></h2><div class="portal-library-grid">${data.favorites.length ? data.favorites.map(renderLibraryCard).join('') : emptyState('No favorites yet', 'Open a plugin and choose “Add to favorites” to keep it here.')}</div></section>
         <section class="portal-library-section"><h2>Liked plugins <span class="plugin-command-count">${data.liked.length}</span></h2><div class="portal-library-grid">${data.liked.length ? data.liked.map(renderLibraryCard).join('') : emptyState('No likes yet', 'Like a plugin to find it here later.')}</div></section>`;
     } catch (error) {
@@ -396,7 +455,7 @@
     updateCommandCount(form);
   }
 
-  function configurePluginForm(form, { initialData = null, actionLabel = 'Save plugin' } = {}) {
+  function configurePluginForm(form, { initialData = null, actionLabel = 'Publish changes', authorEditing = false } = {}) {
     form.replaceChildren($('#plugin-fields-template').content.cloneNode(true));
     renderFormCategories(form, initialData?.categories || []);
     const commands = Array.isArray(initialData?.commands) && initialData.commands.length ? initialData.commands : [{}];
@@ -408,17 +467,78 @@
       else {
         $('#admin-plugin-editor').hidden = true;
         state.editingPluginId = null;
+        state.editingDraftId = null;
       }
     });
     $('.save-plugin-button', form).textContent = actionLabel;
+    const authorField = $('.admin-author-field', form);
+    if (authorEditing && authorField) authorField.hidden = true;
+    const draftButton = $('.save-draft-button', form);
+    if (draftButton) {
+      draftButton.hidden = authorEditing;
+      draftButton.textContent = initialData ? 'Save changes' : 'Save draft';
+      draftButton.addEventListener('click', () => saveAdminDraftFromForm(form));
+    }
+    const previewButton = $('.preview-plugin-button', form);
+    if (previewButton) {
+      previewButton.addEventListener('click', () => {
+        if (!form.reportValidity()) return;
+        try {
+          const payload = getFormPayload(form);
+          openPluginPreview(payload, {
+            title: `Preview — ${payload.title || 'Untitled plugin'}`,
+            pluginId: form.id === 'author-edit-form' ? state.authorEditingPluginId : (state.editingPluginId || ''),
+            published: form.id === 'admin-plugin-form' && state.editingPluginId
+              ? state.adminDashboard?.plugins?.find((item) => String(item.pluginId) === String(state.editingPluginId)) || null
+              : null
+          });
+        } catch (error) {
+          setFormError(form, error.message);
+        }
+      });
+    }
     if (initialData) {
       for (const key of ['title', 'authorId', 'description', 'installWith', 'notes', 'coverImage', 'version', 'visibility']) {
         const field = form.elements.namedItem(key);
-        if (field) field.value = initialData[key] || '';
+        if (field) field.value = initialData[key] || (key === 'visibility' ? 'public' : '');
       }
       form.elements.namedItem('mediaImages').value = (initialData.mediaImages || []).join('\n');
       form.elements.namedItem('youtubeVideos').value = (initialData.youtubeVideos || []).join('\n');
+    } else {
+      const visibility = form.elements.namedItem('visibility');
+      if (visibility) visibility.value = 'public';
     }
+  }
+
+  function openPluginPreview(plugin, { title = 'Plugin preview', pluginId = '', published = null } = {}) {
+    let dialog = $('#plugin-preview-dialog');
+    if (!dialog) {
+      dialog = document.createElement('dialog');
+      dialog.id = 'plugin-preview-dialog';
+      dialog.className = 'portal-dialog portal-dialog-wide plugin-preview-dialog';
+      dialog.innerHTML = '<div class="dialog-header"><div><div class="kicker">Preview</div><h2 class="plugin-preview-title">Plugin preview</h2></div><button class="dialog-close" type="button" data-close-dialog="plugin-preview-dialog" aria-label="Close preview">×</button></div><div class="plugin-preview-content"></div><div class="form-actions"><button class="btn btn-secondary" type="button" data-close-dialog="plugin-preview-dialog">Close preview</button></div>';
+      document.body.append(dialog);
+    }
+    $('.plugin-preview-title', dialog).textContent = title;
+    const renderContent = (item, label = '') => {
+      const safeTitle = escapeHtml(item.title || 'Untitled plugin');
+      const cover = /^https:\/\//i.test(item.coverImage || '')
+        ? `<img class="preview-cover" src="${escapeHtml(item.coverImage)}" alt="${safeTitle} cover" referrerpolicy="no-referrer" />`
+        : '';
+      const categories = (item.categories || []).map((value) => `<span class="plugin-mini-tag">${escapeHtml(value)}</span>`).join('');
+      const commands = (item.commands || []).map((command) => `<tr><td>${escapeHtml(command.command)}</td><td>${renderMarkdown(command.description, 'command-description-markdown')}</td></tr>`).join('');
+      const images = (item.mediaImages || []).filter((url) => /^https:\/\//i.test(url)).map((url) => `<img class="plugin-media-image" src="${escapeHtml(url)}" alt="Additional plugin media" loading="lazy" />`).join('');
+      const videos = (item.youtubeVideos || []).map(youtubeEmbedUrl).filter(Boolean).map((url) => `<iframe class="plugin-video-frame" src="${url}" title="Plugin video preview" loading="lazy" allow="accelerometer; autoplay; encrypted-media; picture-in-picture; web-share" allowfullscreen></iframe>`).join('');
+      const knownAuthor = item.authorDisplayName
+        || state.adminDashboard?.plugins?.find((candidate) => String(candidate.authorId || '') === String(item.authorId || ''))?.authorDisplayName
+        || (state.user && String(state.user.discordId) === String(item.authorId) ? state.user.displayName : '')
+        || 'Author not set';
+      return `<section class="preview-plugin-surface">${label ? `<div class="preview-state-label">${escapeHtml(label)}</div>` : ''}${cover}<h3>${safeTitle}</h3><p class="preview-byline">By ${escapeHtml(knownAuthor)} · Version ${escapeHtml(item.version || '—')} · ${item.visibility === 'admin' ? 'Admin panel only' : 'Public'}</p>${renderMarkdown(item.description, 'plugin-detail-markdown')}<div class="plugin-detail-categories"><span class="plugin-detail-categories-label">Categories</span><div class="plugin-detail-category-list">${categories || '<span class="plugin-mini-tag">Other</span>'}</div></div><div class="portal-id-panel preview-install"><span>Install with</span><div class="install-copy-row"><code>${escapeHtml(item.installWith || '')}</code></div></div><h4>Commands</h4><div class="command-table-wrap"><table class="portal-command-table"><thead><tr><th>Command(s)</th><th>Description</th></tr></thead><tbody>${commands}</tbody></table></div>${item.notes ? `<h4>Additional notes</h4>${renderMarkdown(item.notes, 'plugin-notes')}` : ''}${images ? `<h4>Images</h4><div class="plugin-media-grid">${images}</div>` : ''}${videos ? `<h4>Videos</h4><div class="plugin-media-grid">${videos}</div>` : ''}</section>`;
+    };
+    $('.plugin-preview-content', dialog).innerHTML = published
+      ? `<div class="preview-comparison-grid">${renderContent(published, 'Currently published')}${renderContent(plugin, 'Proposed changes')}</div>`
+      : renderContent(plugin, pluginId ? `Plugin ID: ${pluginId}` : 'Not published yet');
+    if (!dialog.open) dialog.showModal();
   }
 
   function getFormPayload(form) {
@@ -457,14 +577,26 @@
 
   function openAuthorEditor(plugin) {
     if (!state.user || String(state.user.discordId) !== String(plugin.authorId)) return notify('Only the plugin author can request edits.', 'error');
+    state.authorEditingPluginId = plugin.pluginId;
     const existing = $('#author-edit-dialog');
     if (!existing) {
       const dialog = document.createElement('dialog'); dialog.id = 'author-edit-dialog'; dialog.className = 'portal-dialog portal-dialog-wide';
       dialog.innerHTML = '<div class="dialog-header"><div><div class="kicker">Author workspace</div><h2>Request plugin changes</h2></div><button class="dialog-close" type="button" data-close-dialog="author-edit-dialog">×</button></div><p class="dialog-copy">Your changes are sent to Pending changes for an administrator to review. The public plugin stays unchanged until approval.</p><form id="author-edit-form" class="portal-form"></form>';
       document.body.append(dialog);
-      const form = $('#author-edit-form'); configurePluginForm(form, { initialData: plugin, actionLabel: 'Submit for review' });
-      form.addEventListener('submit', async (event) => { event.preventDefault(); if (!form.reportValidity()) return; try { const payload = getFormPayload(form); await api(`/api/plugins/${encodeURIComponent(plugin.pluginId)}/change-request`, { method: 'POST', body: payload }); dialog.close(); notify('Change request submitted for admin review.', 'success'); } catch (error) { setFormError(form, error.message); } });
-    } else { configurePluginForm($('#author-edit-form'), { initialData: plugin, actionLabel: 'Submit for review' }); }
+      const form = $('#author-edit-form'); configurePluginForm(form, { initialData: plugin, actionLabel: 'Submit for review', authorEditing: true });
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!form.reportValidity()) return;
+        try {
+          const payload = getFormPayload(form);
+          await api(`/api/plugins/${encodeURIComponent(state.authorEditingPluginId)}/change-request`, { method: 'POST', body: payload });
+          dialog.close();
+          notify('Change request submitted for admin review.', 'success');
+        } catch (error) { setFormError(form, error.message); }
+      });
+    } else {
+      configurePluginForm($('#author-edit-form'), { initialData: plugin, actionLabel: 'Submit for review', authorEditing: true });
+    }
     $('#author-edit-dialog').showModal();
   }
 
@@ -516,10 +648,21 @@
       notify('This Discord account is not on the Plugin Portal admin allowlist.', 'warning');
       return;
     }
+    // Repeated clicks while the panel is already open must not trigger another prompt.
+    if (state.currentMode === 'admin' && state.adminPanelVerified) {
+      try { await refreshAdminDashboard(); }
+      catch (error) {
+        state.adminPanelVerified = false;
+        notify(error.message, 'error');
+      }
+      return;
+    }
     try {
+      await api('/api/admin/leave', { method: 'POST', body: {} });
       const adminAuth = await requestAdminAuth();
       const dashboard = await api('/api/admin/access', { method: 'POST', body: { adminAuth } });
-      state.adminDashboard = { plugins: dashboard.plugins };
+      state.adminPanelVerified = true;
+      state.adminDashboard = dashboard;
       renderAdminPanel();
       showMode('admin');
     } catch (error) {
@@ -528,35 +671,70 @@
   }
 
   function adminItem(plugin) {
-    return `<article class="admin-item"><div class="admin-item-copy"><strong>${escapeHtml(plugin.title)}</strong><code>ID: ${escapeHtml(plugin.pluginId)}</code><p>By ${escapeHtml(plugin.authorDisplayName || 'Unknown')} · ${formatNumber(plugin.commandCount)} commands · ${formatNumber(plugin.likesCount)} likes · ${formatNumber(plugin.views)} views</p></div><div class="admin-item-actions"><button class="admin-small-button" type="button" data-edit-plugin="${escapeHtml(plugin.pluginId)}">Edit</button><button class="admin-small-button danger" type="button" data-delete-plugin="${escapeHtml(plugin.pluginId)}">Delete</button></div></article>`;
+    return `<article class="admin-item"><div class="admin-item-copy"><strong>${escapeHtml(plugin.title)}</strong><code>ID: ${escapeHtml(plugin.pluginId)}</code><p>By ${escapeHtml(plugin.authorDisplayName || 'Unknown')} · ${formatNumber(plugin.commandCount)} commands · ${formatNumber(plugin.likesCount)} likes · ${formatNumber(plugin.views)} views · ${plugin.visibility === 'admin' ? 'Admin only' : 'Public'}</p></div><div class="admin-item-actions"><button class="admin-small-button" type="button" data-edit-plugin="${escapeHtml(plugin.pluginId)}">Edit</button><button class="admin-small-button danger" type="button" data-delete-plugin="${escapeHtml(plugin.pluginId)}">Delete</button></div></article>`;
+  }
+
+  function adminDraftItem(draft) {
+    return `<article class="admin-item"><div class="admin-item-copy"><strong>${escapeHtml(draft.fields?.title || 'Untitled draft')}</strong><code>${draft.pluginId ? `Plugin ID: ${escapeHtml(draft.pluginId)}` : 'New plugin · not published'} · Draft updated ${escapeHtml(formatDate(draft.updatedAt || draft.createdAt))}</code><p>${escapeHtml(draft.fields?.description || 'No description')}</p></div><div class="admin-item-actions"><button class="admin-small-button" type="button" data-edit-draft="${escapeHtml(draft.draftId)}">Edit draft</button><button class="admin-small-button" type="button" data-publish-draft="${escapeHtml(draft.draftId)}">Publish changes</button><button class="admin-small-button danger" type="button" data-discard-draft="${escapeHtml(draft.draftId)}">Discard</button></div></article>`;
   }
 
   function renderAdminPanel() {
-    const dashboard = state.adminDashboard || { plugins: [] };
+    const dashboard = state.adminDashboard || { plugins: [], pendingChanges: [], drafts: [] };
+    dashboard.plugins = dashboard.plugins || [];
+    dashboard.pendingChanges = dashboard.pendingChanges || [];
+    dashboard.drafts = dashboard.drafts || [];
     $('#admin-view').innerHTML = `
-      <div class="portal-page-heading"><div><div class="kicker">Restricted area</div><h1 id="admin-title">Plugin Portal admin</h1><p>Discord allowlist and a separate site admin key are both required. Re-enter the key for every change.</p></div><button class="portal-user-button" type="button" data-back-catalogue>← Back to portal</button></div>
+      <div class="portal-page-heading"><div><div class="kicker">Restricted area</div><h1 id="admin-title">Plugin Portal admin</h1><p>Your Discord admin allowlist and separate site admin key are verified when entering this panel. Save drafts, preview, and publish without re-entering the key.</p></div><button class="portal-user-button" type="button" data-back-catalogue>← Back to portal</button></div>
       <section class="admin-section"><div class="admin-section-top"><h2>Published plugins</h2><button class="btn btn-primary" type="button" id="admin-add-plugin">＋ Add plugin</button></div>
-        <div id="admin-plugin-editor" class="portal-panel" hidden><div class="dialog-header"><div><div class="kicker">Plugin editor</div><h2 id="admin-editor-title">Add a plugin</h2></div><button class="dialog-close" type="button" id="admin-editor-close" aria-label="Close editor">×</button></div><p class="portal-panel-intro">A unique 24-digit plugin ID is generated automatically for new plugins. Existing IDs never change. Add a cover image and optional image or YouTube media URLs.</p><form id="admin-plugin-form" class="portal-form"></form></div>
-        <section class="admin-section"><h2>Pending changes <span class="plugin-command-count">${(dashboard.pendingChanges || []).length}</span></h2><div class="admin-plugin-list">${(dashboard.pendingChanges || []).length ? dashboard.pendingChanges.map((request) => `<article class="admin-item"><div class="admin-item-copy"><strong>${escapeHtml(request.fields?.title || request.pluginId)} — change request</strong><code>Plugin ID: ${escapeHtml(request.pluginId)} · Request: ${escapeHtml(String(request._id))}</code><p>${escapeHtml(request.fields?.description || "No description")}</p><button class="admin-small-button" type="button" data-preview-change="${escapeHtml(String(request._id))}">Preview changes</button></div><div class="admin-item-actions"><button class="admin-small-button" type="button" data-approve-change="${escapeHtml(String(request._id))}">Approve & publish</button><button class="admin-small-button danger" type="button" data-reject-change="${escapeHtml(String(request._id))}">Reject</button></div></article>`).join('') : emptyState('No pending changes', 'Author-submitted plugin edits will appear here for review.')}</div></section>
+        <div id="admin-plugin-editor" class="portal-panel" hidden><div class="dialog-header"><div><div class="kicker">Plugin editor</div><h2 id="admin-editor-title">Add a plugin</h2></div><button class="dialog-close" type="button" id="admin-editor-close" aria-label="Close editor">×</button></div><p class="portal-panel-intro">Preview your plugin before publishing. “Save changes” stores a draft without changing what the public sees; “Publish changes” applies it. Plugin IDs never change when editing an existing plugin.</p><form id="admin-plugin-form" class="portal-form"></form></div>
         <div class="admin-plugin-list">${dashboard.plugins.length ? dashboard.plugins.map(adminItem).join('') : emptyState('No published plugins', 'Add your first plugin to begin the catalogue.')}</div>
-      </section>`;
+      </section>
+      <section class="admin-section"><h2>Saved drafts <span class="plugin-command-count">${dashboard.drafts.length}</span></h2><div class="admin-plugin-list">${dashboard.drafts.length ? dashboard.drafts.map(adminDraftItem).join('') : emptyState('No saved drafts', 'Save changes from the editor to keep unpublished work here.')}</div></section>
+      <section class="admin-section"><h2>Pending changes <span class="plugin-command-count">${dashboard.pendingChanges.length}</span></h2><p class="portal-panel-intro">Author-submitted changes remain private until an administrator previews and publishes them.</p><div class="admin-plugin-list">${dashboard.pendingChanges.length ? dashboard.pendingChanges.map((request) => `<article class="admin-item"><div class="admin-item-copy"><strong>${escapeHtml(request.fields?.title || request.pluginId)} — change request</strong><code>Plugin ID: ${escapeHtml(request.pluginId)} · Request: ${escapeHtml(String(request._id))}</code><p>${escapeHtml(request.fields?.description || 'No description')}</p></div><div class="admin-item-actions"><button class="admin-small-button" type="button" data-preview-change="${escapeHtml(String(request._id))}">Preview changes</button><button class="admin-small-button" type="button" data-approve-change="${escapeHtml(String(request._id))}">Publish changes</button><button class="admin-small-button danger" type="button" data-reject-change="${escapeHtml(String(request._id))}">Reject</button></div></article>`).join('') : emptyState('No pending changes', 'Author-submitted plugin edits will appear here for review.')}</div></section>`;
 
-    {
-      $('#admin-add-plugin').addEventListener('click', () => openAdminEditor(null));
-      $('#admin-editor-close').addEventListener('click', () => { $('#admin-plugin-editor').hidden = true; state.editingPluginId = null; });
-      $('#admin-plugin-form').addEventListener('submit', saveAdminPlugin);
-    }
+    $('#admin-add-plugin').addEventListener('click', () => openAdminEditor(null));
+    $('#admin-editor-close').addEventListener('click', () => {
+      $('#admin-plugin-editor').hidden = true;
+      state.editingPluginId = null;
+      state.editingDraftId = null;
+    });
+    $('#admin-plugin-form').addEventListener('submit', saveAdminPlugin);
   }
 
-  function openAdminEditor(plugin) {
-    state.editingPluginId = plugin?.pluginId || null;
+  function openAdminEditor(plugin, { draftId = null, pluginId = null } = {}) {
+    state.editingPluginId = pluginId || plugin?.pluginId || null;
+    state.editingDraftId = draftId;
     const editor = $('#admin-plugin-editor');
     editor.hidden = false;
-    $('#admin-editor-title').textContent = plugin ? `Edit ${plugin.title}` : 'Add a plugin';
+    $('#admin-editor-title').textContent = plugin ? `${draftId ? 'Edit draft' : 'Edit'} ${plugin.title || 'plugin'}` : 'Add a plugin';
     const form = $('#admin-plugin-form');
-    configurePluginForm(form, { initialData: plugin, actionLabel: plugin ? 'Save changes' : 'Create plugin' });
-    $('.save-plugin-button', form).textContent = plugin ? 'Save changes' : 'Create plugin';
+    configurePluginForm(form, { initialData: plugin, actionLabel: state.editingPluginId ? 'Publish changes' : 'Publish plugin' });
     editor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  async function saveAdminDraftFromForm(form) {
+    if (form.id !== 'admin-plugin-form') return;
+    setFormError(form, '');
+    if (!form.reportValidity()) return;
+    let payload;
+    try { payload = getFormPayload(form); } catch (error) { setFormError(form, error.message); return; }
+    const previousPluginId = state.editingPluginId;
+    const previousDraftId = state.editingDraftId;
+    const button = $('.save-draft-button', form);
+    const restore = setButtonBusy(button, true, 'Saving…');
+    try {
+      const result = await api('/api/admin/drafts', {
+        method: 'POST',
+        body: { ...payload, pluginId: previousPluginId || '', draftId: previousDraftId || '' }
+      });
+      await refreshAdminDashboard();
+      openAdminEditor(payload, { draftId: result.draftId, pluginId: previousPluginId });
+      notify('Draft saved. The public plugin has not changed.', 'success');
+    } catch (error) {
+      setFormError(form, error.message);
+    } finally {
+      restore();
+    }
   }
 
   async function saveAdminPlugin(event) {
@@ -566,17 +744,19 @@
     if (!form.reportValidity()) return;
     let payload;
     try { payload = getFormPayload(form); } catch (error) { setFormError(form, error.message); return; }
-    const isEdit = Boolean(state.editingPluginId);
-    const path = isEdit ? `/api/admin/plugins/${encodeURIComponent(state.editingPluginId)}` : '/api/admin/plugins';
-    const method = isEdit ? 'PUT' : 'POST';
+    const editingId = state.editingPluginId;
+    const draftId = state.editingDraftId;
+    const path = editingId ? `/api/admin/plugins/${encodeURIComponent(editingId)}` : '/api/admin/plugins';
+    const method = editingId ? 'PUT' : 'POST';
     const button = $('.save-plugin-button', form);
-    const restore = setButtonBusy(button, true, 'Verifying…');
+    const restore = setButtonBusy(button, true, 'Publishing…');
     try {
-      const adminAuth = await requestAdminAuth();
-      const result = await api(path, { method, body: { ...payload, adminAuth } });
-      await refreshAdminDashboard(adminAuth);
+      const result = await api(path, { method, body: payload });
+      if (draftId) await api(`/api/admin/drafts/${encodeURIComponent(draftId)}`, { method: 'DELETE', body: {} });
       state.editingPluginId = null;
-      notify(`${result.message}${result.pluginId ? ` Plugin ID: ${result.pluginId}` : ''}`, 'success');
+      state.editingDraftId = null;
+      await refreshAdminDashboard();
+      notify(`${result.message || 'Plugin changes published.'}${result.pluginId ? ` Plugin ID: ${result.pluginId}` : ''}`, 'success');
     } catch (error) {
       setFormError(form, error.message);
     } finally {
@@ -584,23 +764,46 @@
     }
   }
 
+  async function publishDraft(draftId) {
+    const draft = state.adminDashboard?.drafts?.find((item) => item.draftId === draftId);
+    if (!draft) return;
+    if (!window.confirm(`Publish changes for “${draft.fields?.title || 'Untitled plugin'}”?`)) return;
+    try {
+      const path = draft.pluginId ? `/api/admin/plugins/${encodeURIComponent(draft.pluginId)}` : '/api/admin/plugins';
+      const result = await api(path, { method: draft.pluginId ? 'PUT' : 'POST', body: draft.fields });
+      await api(`/api/admin/drafts/${encodeURIComponent(draftId)}`, { method: 'DELETE', body: {} });
+      await refreshAdminDashboard();
+      notify(`${result.message || 'Draft published.'}${result.pluginId ? ` Plugin ID: ${result.pluginId}` : ''}`, 'success');
+    } catch (error) { notify(error.message, 'error'); }
+  }
+
+  async function discardDraft(draftId) {
+    if (!window.confirm('Discard this saved draft? This cannot be undone.')) return;
+    try {
+      await api(`/api/admin/drafts/${encodeURIComponent(draftId)}`, { method: 'DELETE', body: {} });
+      await refreshAdminDashboard();
+      notify('Draft discarded.', 'success');
+    } catch (error) { notify(error.message, 'error'); }
+  }
+
   async function adminMutation(path, method, payload = {}, confirmMessage = '') {
     if (confirmMessage && !window.confirm(confirmMessage)) return;
     try {
-      const adminAuth = await requestAdminAuth();
-      const result = await api(path, { method, body: { ...payload, adminAuth } });
-      await refreshAdminDashboard(adminAuth);
-      notify(result.message || 'Change completed and verified.', 'success');
+      const result = await api(path, { method, body: payload });
+      await refreshAdminDashboard();
+      notify(result.message || 'Change completed.', 'success');
     } catch (error) {
       notify(error.message, 'error');
+      if (error.status === 401) notify('Admin verification expired. Leave and re-enter the admin panel to verify again.', 'warning');
     }
   }
 
-  async function refreshAdminDashboard(adminAuth) {
-    const dashboard = await api('/api/admin/access', { method: 'POST', body: { adminAuth } });
-    state.adminDashboard = { plugins: dashboard.plugins };
+  async function refreshAdminDashboard() {
+    const dashboard = await api('/api/admin/dashboard');
+    state.adminDashboard = dashboard;
     renderAdminPanel();
     showMode('admin');
+    return dashboard;
   }
 
   async function handleDetailAction(kind) {
@@ -633,8 +836,14 @@
     }
   }
 
-  function returnToCatalogue() {
-    state.adminCredentials = null;
+  async function returnToCatalogue() {
+    if (state.currentMode === 'admin' && state.accessToken) {
+      try { await api('/api/admin/leave', { method: 'POST', body: {} }); } catch { }
+    }
+    state.currentMode = 'catalogue';
+    state.adminPanelVerified = false;
+    state.editingPluginId = null;
+    state.editingDraftId = null;
     window.location.assign(`${basePath}/`);
   }
 
@@ -648,7 +857,7 @@
       localStorage.removeItem(accessTokenKey);
       state.user = null;
       state.canAccessAdmin = false;
-      state.adminCredentials = null;
+      state.adminPanelVerified = false;
       updateAuthButtons();
       notify('You have signed out.', 'success');
       returnToCatalogue();
@@ -701,8 +910,33 @@
       if (approveChange) { await adminMutation(`/api/admin/change-requests/${encodeURIComponent(approveChange.dataset.approveChange)}/approve`, 'POST', {}, 'Approve and publish these plugin changes?'); return; }
       const rejectChange = event.target.closest('[data-reject-change]');
       if (rejectChange) { await adminMutation(`/api/admin/change-requests/${encodeURIComponent(rejectChange.dataset.rejectChange)}/reject`, 'POST', {}, 'Reject this plugin change request?'); return; }
+      const shareButton = event.target.closest('[data-share-plugin]');
+      if (shareButton) {
+        const pluginId = shareButton.dataset.sharePlugin;
+        const shareUrl = `${apiBase}/share/${encodeURIComponent(pluginId)}${window.location.hash || ''}`;
+        try { await navigator.clipboard.writeText(shareUrl); notify('Share link copied. Social previews use the plugin cover image.', 'success'); }
+        catch { window.prompt('Copy this plugin share link:', shareUrl); }
+        return;
+      }
       const previewChange = event.target.closest('[data-preview-change]');
-      if (previewChange) { const change = state.adminDashboard?.pendingChanges?.find((item) => String(item._id) === previewChange.dataset.previewChange); if (change) { const w = window.open('', '_blank', 'noopener'); if (w) { w.document.write(`<title>Pending change preview</title><h1>${escapeHtml(change.fields?.title || '')}</h1><p>${escapeHtml(change.fields?.description || '')}</p><pre>${escapeHtml(change.fields?.notes || '')}</pre>`); w.document.close(); } } return; }
+      if (previewChange) {
+        const change = state.adminDashboard?.pendingChanges?.find((item) => String(item._id) === previewChange.dataset.previewChange);
+        if (change) {
+          const published = state.adminDashboard?.plugins?.find((item) => String(item.pluginId) === String(change.pluginId)) || null;
+          openPluginPreview(change.fields || {}, { title: `Pending changes — ${change.fields?.title || change.pluginId}`, pluginId: change.pluginId, published });
+        }
+        return;
+      }
+      const editDraftButton = event.target.closest('[data-edit-draft]');
+      if (editDraftButton) {
+        const draft = state.adminDashboard?.drafts?.find((item) => item.draftId === editDraftButton.dataset.editDraft);
+        if (draft) openAdminEditor(draft.fields, { draftId: draft.draftId, pluginId: draft.pluginId || null });
+        return;
+      }
+      const publishDraftButton = event.target.closest('[data-publish-draft]');
+      if (publishDraftButton) { await publishDraft(publishDraftButton.dataset.publishDraft); return; }
+      const discardDraftButton = event.target.closest('[data-discard-draft]');
+      if (discardDraftButton) { await discardDraft(discardDraftButton.dataset.discardDraft); return; }
       const deleteButton = event.target.closest('[data-delete-plugin]');
       if (deleteButton) {
         const plugin = state.adminDashboard?.plugins.find((item) => item.pluginId === deleteButton.dataset.deletePlugin);
@@ -766,7 +1000,7 @@
     const pathMatch = window.location.pathname.match(new RegExp(`^${basePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/(\\d{20,30})/?$`));
     const pluginId = pathMatch?.[1] || (/^\d{20,30}$/.test(queryPlugin || '') ? queryPlugin : null);
     if (pluginId) {
-      if (queryPlugin) history.replaceState({}, '', `${basePath}/${pluginId}`);
+      if (pathMatch && !queryPlugin) history.replaceState({}, '', `${basePath}/?plugin=${encodeURIComponent(pluginId)}${window.location.hash}`);
       await loadPluginDetail(pluginId);
     } else {
       showMode('catalogue');
