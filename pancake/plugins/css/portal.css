@@ -271,3 +271,23 @@
 /* Category tags are navigable links, including on plugin detail pages. */
 .plugin-category-link { text-decoration: none; cursor: pointer; transition: color .18s ease, border-color .18s ease, background .18s ease; }
 .plugin-category-link:hover, .plugin-category-link:focus-visible { color: var(--gold, #ffd466); border-color: rgba(255,212,102,.55); background: rgba(255,212,102,.09); outline: none; }
+
+/* Refined Markdown rhythm and compact install actions. */
+.portal-markdown { font-size: .94em; line-height: 1.65; }
+.portal-markdown p { margin: .42em 0; }
+.portal-markdown h1 { font-size: 1.35em; }
+.portal-markdown h2 { font-size: 1.2em; }
+.portal-markdown h3 { font-size: 1.08em; }
+.portal-markdown ul, .portal-markdown ol { margin: .4em 0; padding-left: 1.3em; }
+.portal-markdown li { padding-left: .08em; }
+.portal-markdown li + li { margin-top: .12em; }
+.markdown-heading-anchor { opacity: .45; text-decoration: none !important; font-size: .8em; }
+.markdown-heading-anchor:hover { opacity: 1; }
+.portal-home-link { display: inline-block; color: var(--portal-accent); font-size: 14px; font-weight: 900; text-decoration: none; letter-spacing: .08em; text-transform: uppercase; }
+.portal-home-link:hover { color: #ffe7a3; }
+.portal-avatar { width: 23px; height: 23px; border-radius: 50%; object-fit: cover; }
+.portal-avatar-fallback { display: inline-grid; place-items: center; width: 23px; height: 23px; border-radius: 50%; background: rgba(255,255,255,.1); }
+.portal-user-button:has(.portal-avatar) { padding-left: 8px; }
+.install-copy-row { display: flex; align-items: center; gap: 8px; }
+.install-copy-row code { min-width: 0; flex: 1; }
+.install-copy-button { min-height: 30px; padding: 0 9px; border-radius: 8px; font-size: 10px; flex: 0 0 auto; }

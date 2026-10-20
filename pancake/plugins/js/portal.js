@@ -6,13 +6,14 @@
   const basePath = (document.querySelector('meta[name="portal-base-path"]')?.content || '/pancake/plugins').replace(/\/$/, '');
   const apiBase = (document.querySelector('meta[name="api-base"]')?.content || '').trim().replace(/\/$/, '');
   const accessTokenKey = 'pancakePluginPortalAccessToken';
+  const adminAuthKey = 'pancakePluginPortalAdminAuth';
   const categoriesFallback = [
     'Fun', 'Moderation', 'Utility', 'Media', 'Social', 'Info', 'Tools', 'Loggin',
     'Security', 'Only Admin', 'Permissions', 'Levels', 'Roles', 'Messages', 'Experimental', 'Other'
   ];
 
   const state = {
-    accessToken: sessionStorage.getItem(accessTokenKey) || '',
+    accessToken: localStorage.getItem(accessTokenKey) || '',
     user: null,
     canAccessAdmin: false,
     categories: categoriesFallback,
@@ -22,7 +23,8 @@
     currentPlugin: null,
     adminDashboard: null,
     editingPluginId: null,
-    adminAuthResolver: null
+    adminAuthResolver: null,
+    adminCredentials: null
   };
 
   const $ = (selector, root = document) => root.querySelector(selector);
@@ -44,6 +46,10 @@
         const safeHtml = window.DOMPurify.sanitize(parsed, { USE_PROFILES: { html: true } });
         const container = document.createElement('div');
         container.innerHTML = safeHtml;
+        container.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach((heading) => {
+          const slug = heading.textContent.trim().toLowerCase().replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+          if (slug) { heading.id = slug; const anchor = document.createElement('a'); anchor.className = 'markdown-heading-anchor'; anchor.href = `#${slug}`; anchor.setAttribute('aria-label', `Link to ${heading.textContent.trim()}`); anchor.textContent = ' #'; heading.append(anchor); }
+        });
         container.querySelectorAll('a[href]').forEach((link) => {
           link.setAttribute('target', '_blank');
           link.setAttribute('rel', 'noopener noreferrer');
@@ -134,6 +140,7 @@
   }
 
   function showMode(mode) {
+    if (mode !== 'admin') state.adminCredentials = null;
     const catalogueMode = mode === 'catalogue';
     $('.portal-toolbar').hidden = !catalogueMode;
     $('.portal-category-section').hidden = !catalogueMode;
@@ -152,7 +159,7 @@
       state.canAccessAdmin = Boolean(result.canAccessAdmin);
       if (!state.user && state.accessToken) {
         state.accessToken = '';
-        sessionStorage.removeItem(accessTokenKey);
+        localStorage.removeItem(accessTokenKey);
       }
       updateAuthButtons();
       return result;
@@ -178,7 +185,7 @@
       loginButton.hidden = true;
       profileButton.hidden = false;
       logoutButton.hidden = false;
-      profileButton.textContent = `My library · ${state.user.displayName || 'Unknown'}`;
+      profileButton.innerHTML = `${state.user.avatarUrl ? `<img class="portal-avatar" src="${escapeHtml(state.user.avatarUrl)}" alt="" referrerpolicy="no-referrer" />` : '<span class="portal-avatar-fallback">◉</span>'} <span>My library</span>`;
       adminButton.hidden = !state.canAccessAdmin;
     } else {
       loginButton.hidden = false;
@@ -270,11 +277,11 @@
     setMeta('meta[property="og:title"]', 'content', title);
     setMeta('meta[property="og:description"]', 'content', description);
     setMeta('meta[property="og:url"]', 'content', window.location.href);
-    setMeta('meta[property="og:image"]', 'content', 'https://suitedxd.github.io/pancake-development-team/assets/pancake/pancake-social_02.png');
+    setMeta('meta[property="og:image"]', 'content', plugin.coverImage || 'https://suitedxd.github.io/pancake-development-team/assets/pancake/pancake-social_02.png');
     setMeta('meta[name="twitter:card"]', 'content', 'summary_large_image');
     setMeta('meta[name="twitter:title"]', 'content', title);
     setMeta('meta[name="twitter:description"]', 'content', description);
-    setMeta('meta[name="twitter:image"]', 'content', 'https://suitedxd.github.io/pancake-development-team/assets/pancake/pancake-social_02.png');
+    setMeta('meta[name="twitter:image"]', 'content', plugin.coverImage || 'https://suitedxd.github.io/pancake-development-team/assets/pancake/pancake-social_02.png');
   }
 
   function renderPluginDetail(plugin) {
@@ -306,8 +313,8 @@
           <h2 id="plugin-details-title">Plugin details</h2>
           <div class="plugin-detail-info">
             <div class="portal-id-panel"><span>Author</span><strong>${escapeHtml(plugin.authorDisplayName || 'Unknown')}</strong></div>
-            <div class="portal-id-panel"><span>Last updated</span><strong>${escapeHtml(formatDate(plugin.updatedAt))}</strong></div>
-            <div class="portal-id-panel portal-install-panel"><span>Install with</span><code>${escapeHtml(plugin.installWith)}</code></div>
+            <div class="portal-id-panel"><span>Last updated</span><strong>${escapeHtml(formatDate(plugin.updatedAt))}</strong></div><div class="portal-id-panel"><span>Plugin version</span><strong>${escapeHtml(plugin.version || '—')}</strong></div>
+            <div class="portal-id-panel portal-install-panel"><span>Install with</span><div class="install-copy-row"><code>${escapeHtml(plugin.installWith)}</code><button class="plugin-action-button install-copy-button" type="button" data-copy-install="${escapeHtml(plugin.installWith)}" aria-label="Copy install command">Copy</button></div></div>
           </div>
           ${categories ? `<div class="plugin-detail-categories"><span class="plugin-detail-categories-label">Categories</span><div class="plugin-detail-category-list">${categories}</div></div>` : ''}
         </aside>
@@ -405,7 +412,7 @@
     });
     $('.save-plugin-button', form).textContent = actionLabel;
     if (initialData) {
-      for (const key of ['title', 'authorId', 'description', 'installWith', 'notes', 'coverImage']) {
+      for (const key of ['title', 'authorId', 'description', 'installWith', 'notes', 'coverImage', 'version', 'visibility']) {
         const field = form.elements.namedItem(key);
         if (field) field.value = initialData[key] || '';
       }
@@ -428,6 +435,8 @@
       title: form.elements.namedItem('title').value.trim(),
       description: form.elements.namedItem('description').value.trim(),
       installWith: form.elements.namedItem('installWith').value.trim(),
+      version: form.elements.namedItem('version')?.value.trim() || '',
+      visibility: form.elements.namedItem('visibility')?.value || 'public',
       notes: form.elements.namedItem('notes').value.trim(),
       coverImage: form.elements.namedItem('coverImage').value.trim(),
       mediaImages: form.elements.namedItem('mediaImages').value.split('\n').map((url) => url.trim()).filter(Boolean),
@@ -444,6 +453,19 @@
     if (!target) return;
     target.textContent = message;
     target.hidden = !message;
+  }
+
+  function openAuthorEditor(plugin) {
+    if (!state.user || String(state.user.discordId) !== String(plugin.authorId)) return notify('Only the plugin author can request edits.', 'error');
+    const existing = $('#author-edit-dialog');
+    if (!existing) {
+      const dialog = document.createElement('dialog'); dialog.id = 'author-edit-dialog'; dialog.className = 'portal-dialog portal-dialog-wide';
+      dialog.innerHTML = '<div class="dialog-header"><div><div class="kicker">Author workspace</div><h2>Request plugin changes</h2></div><button class="dialog-close" type="button" data-close-dialog="author-edit-dialog">×</button></div><p class="dialog-copy">Your changes are sent to Pending changes for an administrator to review. The public plugin stays unchanged until approval.</p><form id="author-edit-form" class="portal-form"></form>';
+      document.body.append(dialog);
+      const form = $('#author-edit-form'); configurePluginForm(form, { initialData: plugin, actionLabel: 'Submit for review' });
+      form.addEventListener('submit', async (event) => { event.preventDefault(); if (!form.reportValidity()) return; try { const payload = getFormPayload(form); await api(`/api/plugins/${encodeURIComponent(plugin.pluginId)}/change-request`, { method: 'POST', body: payload }); dialog.close(); notify('Change request submitted for admin review.', 'success'); } catch (error) { setFormError(form, error.message); } });
+    } else { configurePluginForm($('#author-edit-form'), { initialData: plugin, actionLabel: 'Submit for review' }); }
+    $('#author-edit-dialog').showModal();
   }
 
   function promptAdminCredentials() {
@@ -515,6 +537,7 @@
       <div class="portal-page-heading"><div><div class="kicker">Restricted area</div><h1 id="admin-title">Plugin Portal admin</h1><p>Discord allowlist and a separate site admin key are both required. Re-enter the key for every change.</p></div><button class="portal-user-button" type="button" data-back-catalogue>← Back to portal</button></div>
       <section class="admin-section"><div class="admin-section-top"><h2>Published plugins</h2><button class="btn btn-primary" type="button" id="admin-add-plugin">＋ Add plugin</button></div>
         <div id="admin-plugin-editor" class="portal-panel" hidden><div class="dialog-header"><div><div class="kicker">Plugin editor</div><h2 id="admin-editor-title">Add a plugin</h2></div><button class="dialog-close" type="button" id="admin-editor-close" aria-label="Close editor">×</button></div><p class="portal-panel-intro">A unique 24-digit plugin ID is generated automatically for new plugins. Existing IDs never change. Add a cover image and optional image or YouTube media URLs.</p><form id="admin-plugin-form" class="portal-form"></form></div>
+        <section class="admin-section"><h2>Pending changes <span class="plugin-command-count">${(dashboard.pendingChanges || []).length}</span></h2><div class="admin-plugin-list">${(dashboard.pendingChanges || []).length ? dashboard.pendingChanges.map((request) => `<article class="admin-item"><div class="admin-item-copy"><strong>${escapeHtml(request.fields?.title || request.pluginId)} — change request</strong><code>Plugin ID: ${escapeHtml(request.pluginId)} · Request: ${escapeHtml(String(request._id))}</code><p>${escapeHtml(request.fields?.description || "No description")}</p><button class="admin-small-button" type="button" data-preview-change="${escapeHtml(String(request._id))}">Preview changes</button></div><div class="admin-item-actions"><button class="admin-small-button" type="button" data-approve-change="${escapeHtml(String(request._id))}">Approve & publish</button><button class="admin-small-button danger" type="button" data-reject-change="${escapeHtml(String(request._id))}">Reject</button></div></article>`).join('') : emptyState('No pending changes', 'Author-submitted plugin edits will appear here for review.')}</div></section>
         <div class="admin-plugin-list">${dashboard.plugins.length ? dashboard.plugins.map(adminItem).join('') : emptyState('No published plugins', 'Add your first plugin to begin the catalogue.')}</div>
       </section>`;
 
@@ -611,6 +634,7 @@
   }
 
   function returnToCatalogue() {
+    state.adminCredentials = null;
     window.location.assign(`${basePath}/`);
   }
 
@@ -621,9 +645,10 @@
       console.warn('Server-side sign-out could not complete:', error.message);
     } finally {
       state.accessToken = '';
-      sessionStorage.removeItem(accessTokenKey);
+      localStorage.removeItem(accessTokenKey);
       state.user = null;
       state.canAccessAdmin = false;
+      state.adminCredentials = null;
       updateAuthButtons();
       notify('You have signed out.', 'success');
       returnToCatalogue();
@@ -661,7 +686,10 @@
       const closeButton = event.target.closest('[data-close-dialog]');
       if (closeButton) { document.getElementById(closeButton.dataset.closeDialog)?.close(); return; }
       if (event.target.closest('[data-detail-like]')) { await handleDetailAction('like'); return; }
+      if (event.target.closest('[data-author-edit]')) { if (state.currentPlugin) openAuthorEditor(state.currentPlugin); return; }
       if (event.target.closest('[data-detail-favorite]')) { await handleDetailAction('favorite'); return; }
+      const copyInstall = event.target.closest('[data-copy-install]');
+      if (copyInstall) { try { await navigator.clipboard.writeText(copyInstall.dataset.copyInstall || ''); notify('Install command copied.', 'success'); } catch { notify('Could not access the clipboard. Copy the command manually.', 'error'); } return; }
       if (event.target.closest('[data-back-catalogue]')) { returnToCatalogue(); return; }
       const editButton = event.target.closest('[data-edit-plugin]');
       if (editButton) {
@@ -669,6 +697,12 @@
         if (plugin) openAdminEditor(plugin);
         return;
       }
+      const approveChange = event.target.closest('[data-approve-change]');
+      if (approveChange) { await adminMutation(`/api/admin/change-requests/${encodeURIComponent(approveChange.dataset.approveChange)}/approve`, 'POST', {}, 'Approve and publish these plugin changes?'); return; }
+      const rejectChange = event.target.closest('[data-reject-change]');
+      if (rejectChange) { await adminMutation(`/api/admin/change-requests/${encodeURIComponent(rejectChange.dataset.rejectChange)}/reject`, 'POST', {}, 'Reject this plugin change request?'); return; }
+      const previewChange = event.target.closest('[data-preview-change]');
+      if (previewChange) { const change = state.adminDashboard?.pendingChanges?.find((item) => String(item._id) === previewChange.dataset.previewChange); if (change) { const w = window.open('', '_blank', 'noopener'); if (w) { w.document.write(`<title>Pending change preview</title><h1>${escapeHtml(change.fields?.title || '')}</h1><p>${escapeHtml(change.fields?.description || '')}</p><pre>${escapeHtml(change.fields?.notes || '')}</pre>`); w.document.close(); } } return; }
       const deleteButton = event.target.closest('[data-delete-plugin]');
       if (deleteButton) {
         const plugin = state.adminDashboard?.plugins.find((item) => item.pluginId === deleteButton.dataset.deletePlugin);
@@ -694,14 +728,14 @@
       try {
         const result = await api('/api/auth/exchange', { method: 'POST', body: { code } });
         state.accessToken = result.accessToken;
-        sessionStorage.setItem(accessTokenKey, result.accessToken);
+        localStorage.setItem(accessTokenKey, result.accessToken);
         state.user = result.user || null;
         state.canAccessAdmin = Boolean(result.canAccessAdmin);
         updateAuthButtons();
         notify(`Signed in${state.user ? ` as ${state.user.displayName || 'Unknown'}` : ''}.`, 'success');
       } catch (error) {
         state.accessToken = '';
-        sessionStorage.removeItem(accessTokenKey);
+        localStorage.removeItem(accessTokenKey);
         notify(`Discord sign-in could not be completed: ${error.message}`, 'error');
       }
     }
