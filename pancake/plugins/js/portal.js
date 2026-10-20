@@ -66,8 +66,8 @@
           anchor.href = `#${slug}`;
           anchor.setAttribute('aria-label', `Copyable link to ${heading.textContent.trim()}`);
           anchor.setAttribute('title', `Link to ${heading.textContent.trim()}`);
-          anchor.textContent = ' #';
-          heading.append(anchor);
+          anchor.textContent = '#';
+          heading.prepend(anchor);
         });
         container.querySelectorAll('a[href]').forEach((link) => {
           const href = link.getAttribute('href') || '';
@@ -364,8 +364,9 @@
           <h2 id="plugin-details-title">Plugin details</h2>
           <div class="plugin-detail-info">
             <div class="portal-id-panel"><span>Author</span><strong>${escapeHtml(plugin.authorDisplayName || 'Unknown')}</strong></div>
-            <div class="portal-id-panel"><span>Last updated</span><strong>${escapeHtml(formatDate(plugin.updatedAt))}</strong></div><div class="portal-id-panel"><span>Plugin version</span><strong>${escapeHtml(plugin.version || '—')}</strong></div>
-            <div class="portal-id-panel portal-install-panel"><span>Install with</span><div class="install-copy-row"><code>${escapeHtml(plugin.installWith)}</code><button class="plugin-action-button install-copy-button" type="button" data-copy-install="${escapeHtml(plugin.installWith)}" aria-label="Copy install command">Copy</button></div></div>
+            <div class="portal-id-panel"><span>Last updated</span><strong>${escapeHtml(formatDate(plugin.updatedAt))}</strong></div>
+            <div class="portal-id-panel portal-version-panel"><span>Plugin version</span><strong>${escapeHtml(plugin.version || '—')}</strong></div>
+            <div class="portal-id-panel portal-install-panel"><span>Install with</span><div class="install-copy-row"><code>${escapeHtml(plugin.installWith)}</code><button class="plugin-action-button install-copy-button" type="button" data-copy-install="${escapeHtml(plugin.installWith)}" aria-label="Copy install command" title="Copy install command"><img src="../../assets/copy.png" alt="" aria-hidden="true" /></button></div></div>
           </div>
           ${categories ? `<div class="plugin-detail-categories"><span class="plugin-detail-categories-label">Categories</span><div class="plugin-detail-category-list">${categories}</div></div>` : ''}
         </aside>
@@ -914,7 +915,7 @@
       if (shareButton) {
         const pluginId = shareButton.dataset.sharePlugin;
         const shareUrl = `${apiBase}/share/${encodeURIComponent(pluginId)}${window.location.hash || ''}`;
-        try { await navigator.clipboard.writeText(shareUrl); notify('Share link copied. Social previews use the plugin cover image.', 'success'); }
+        try { await navigator.clipboard.writeText(shareUrl); notify('Share link copied.', 'success'); }
         catch { window.prompt('Copy this plugin share link:', shareUrl); }
         return;
       }

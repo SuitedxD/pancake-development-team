@@ -328,3 +328,60 @@
 .preview-plugin-surface .portal-command-table { font-size: 11px; }
 .preview-plugin-surface .plugin-media-grid { margin-top: 10px; gap: 8px; }
 @media (max-width: 760px) { .preview-comparison-grid { grid-template-columns: 1fr; } }
+
+
+/* Small refinement: align plugin metadata, use the supplied copy icon, and improve Markdown readability. */
+.plugin-detail-info {
+  grid-template-columns: minmax(140px, .9fr) minmax(165px, 1fr) minmax(100px, .45fr) minmax(250px, 1.55fr);
+  gap: 10px;
+  align-items: stretch;
+}
+.plugin-detail-info .portal-id-panel { padding: 12px 13px; }
+.plugin-detail-info .portal-id-panel > span { margin-bottom: 7px; }
+.plugin-detail-info .portal-version-panel { padding: 10px 11px; }
+.portal-install-panel .install-copy-row code { color: var(--portal-accent, #ffd466); }
+.install-copy-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 7px;
+  flex: 0 0 34px;
+}
+.install-copy-button img { display: block; width: 18px; height: 18px; object-fit: contain; }
+
+.portal-markdown { font-size: .98em; line-height: 1.72; }
+.portal-markdown p { margin: .58em 0; }
+.portal-markdown h1, .portal-markdown h2, .portal-markdown h3,
+.portal-markdown h4, .portal-markdown h5, .portal-markdown h6 { line-height: 1.38; }
+.portal-markdown h1 { margin: .9em 0 .42em; font-size: 1.38em; }
+.portal-markdown h2 { margin: .82em 0 .38em; font-size: 1.23em; }
+.portal-markdown h3 { margin: .72em 0 .32em; font-size: 1.1em; }
+.portal-markdown h4, .portal-markdown h5, .portal-markdown h6 { margin: .68em 0 .28em; font-size: 1.02em; }
+.portal-markdown ul, .portal-markdown ol { margin: .52em 0; }
+.portal-markdown li + li { margin-top: .2em; }
+.portal-markdown blockquote { margin: .72em 0; }
+.portal-markdown pre { margin: .7em 0; }
+.portal-markdown table { line-height: 1.6; }
+.plugin-detail-markdown { font-size: 15px; line-height: 1.78; }
+.plugin-notes { font-size: 13px; line-height: 1.82; }
+.command-description-markdown { font-size: 12px; line-height: 1.6; }
+.markdown-heading-anchor {
+  margin-left: 0;
+  margin-right: .38em;
+  font-size: .82em;
+  line-height: 1;
+  vertical-align: .04em;
+}
+
+@media (max-width: 760px) {
+  .plugin-detail-info { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .portal-install-panel { grid-column: 1 / -1; }
+  .plugin-detail-info .portal-version-panel { max-width: none; }
+}
+@media (max-width: 480px) {
+  .plugin-detail-info { grid-template-columns: minmax(0, 1fr); }
+  .portal-install-panel { grid-column: auto; }
+}
