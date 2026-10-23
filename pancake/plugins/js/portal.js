@@ -282,7 +282,7 @@
 
   async function refreshCatalogue() {
     const grid = $('#plugin-grid');
-    grid.innerHTML = `<div class="portal-empty-state"><span class="portal-loader" aria-hidden="true"></span><p>Almost there…</p></div>`;
+    grid.innerHTML = `<div class="portal-empty-state"><span class="portal-loader" aria-hidden="true"></span><p>Almost ready…</p></div>`;
     const params = new URLSearchParams();
     if (state.query) params.set('q', state.query);
     if (state.selectedCategory) params.set('category', state.selectedCategory);
@@ -292,7 +292,7 @@
       grid.innerHTML = data.plugins.length
         ? data.plugins.map(pluginCard).join('')
         : emptyState('No Plugins found', 'Try a different search term or choose another category.');
-      $('#results-summary').textContent = `${formatNumber(data.total)} Plugin${data.total === 1 ? '' : 's'} found`;
+      $('#results-summary').textContent = `${formatNumber(data.total)} Plugin${data.total === 1 ? '' : 's'} found.`;
     } catch (error) {
       grid.innerHTML = emptyState('Could not load Plugins', error.message);
       $('#results-summary').textContent = 'Catalogue unavailable';
@@ -345,7 +345,7 @@
         ${youtubeVideos.length ? `<div class="plugin-media-grid plugin-video-grid">${youtubeVideos.map((url, index) => `<iframe class="plugin-video-frame" src="${url}" title="${escapeHtml(plugin.title)} video ${index + 1}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`).join('')}</div>` : ''}
       </section>` : '';
     $('#detail-view').innerHTML = `
-      <a class="portal-back" href="${basePath}/">← Back to all plugins</a>
+      <a class="portal-back" href="${basePath}/">← Back to all Plugins</a>
       <header class="plugin-detail-header">
         ${plugin.coverImage && /^https:\/\//i.test(plugin.coverImage) ? `<img class="plugin-detail-cover" src="${escapeHtml(plugin.coverImage)}" alt="${escapeHtml(plugin.title)} cover" decoding="async" referrerpolicy="no-referrer" />` : ''}
         <h1>${escapeHtml(plugin.title)}</h1>
@@ -414,9 +414,9 @@
       const data = await api('/api/profile');
       $('#profile-view').innerHTML = `
         <div class="portal-page-heading"><div><h1 id="profile-title">My Library</h1><p>Browse your favorites, liked Plugins, and published ones you authored.</p></div><button class="portal-user-button" type="button" data-back-catalogue>← Browse Plugins</button></div>
-        <section class="portal-library-section"><h2>Saved Favorites: <span class="plugin-command-count">${data.favorites.length}</span></h2><div class="portal-library-grid">${data.favorites.length ? data.favorites.map(renderLibraryCard).join('') : emptyState('No favorites yet', 'Open a Plugin and choose “Add to favorites” to keep it here.')}</div></section>
+        <section class="portal-library-section"><h2>Saved favorites: <span class="plugin-command-count">${data.favorites.length}</span></h2><div class="portal-library-grid">${data.favorites.length ? data.favorites.map(renderLibraryCard).join('') : emptyState('No favorites yet', 'Open a Plugin and choose “Add to favorites” to keep it here.')}</div></section>
         <section class="portal-library-section"><h2>Liked Plugins: <span class="plugin-command-count">${data.liked.length}</span></h2><div class="portal-library-grid">${data.liked.length ? data.liked.map(renderLibraryCard).join('') : emptyState('No likes yet', 'Like a Plugin to find it here later.')}</div></section>
-        <section class="portal-library-section"><h2>Published by You: <span class="plugin-command-count">${(data.authored || []).length}</span></h2><div class="portal-library-grid">${(data.authored || []).length ? data.authored.map(renderLibraryCard).join('') : emptyState('No published Plugins yet', 'Plugins authored by your Discord account will appear here. For more info about creating your own Plugins, check our [Plugin Creation Guide](https://github.com/SuitedxD/Pancake/blob/main/docs/plugins-guide.md).')}</div></section>`;
+        <section class="portal-library-section"><h2>Published by you: <span class="plugin-command-count">${(data.authored || []).length}</span></h2><div class="portal-library-grid">${(data.authored || []).length ? data.authored.map(renderLibraryCard).join('') : emptyState('No published Plugins yet', 'Plugins authored by your Discord account will appear here. For more info about creating your own Plugins, check our [Plugin Creation Guide](https://github.com/SuitedxD/Pancake/blob/main/docs/plugins-guide.md).')}</div></section>`;
     } catch (error) {
       $('#profile-view').innerHTML = `${emptyState('Could not load your library', error.message)}<div class="form-actions"><button class="portal-user-button" type="button" data-back-catalogue>Back to plugins</button></div>`;
     }
