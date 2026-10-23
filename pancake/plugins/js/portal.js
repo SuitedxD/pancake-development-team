@@ -363,10 +363,10 @@
         <aside class="portal-panel plugin-details-panel" aria-labelledby="plugin-details-title">
           <h2 id="plugin-details-title">Plugin details</h2>
           <div class="plugin-detail-info">
-            <div class="portal-id-panel"><span>Author</span><strong>${escapeHtml(plugin.authorDisplayName || 'Unknown')}</strong></div>
-            <div class="portal-id-panel"><span>Last updated</span><strong>${escapeHtml(formatDate(plugin.updatedAt))}</strong></div>
-            <div class="portal-id-panel portal-version-panel"><span>Plugin version</span><strong>${escapeHtml(plugin.version || '—')}</strong></div>
-            <div class="portal-id-panel portal-install-panel"><span>Install with</span><div class="install-copy-row"><code>${escapeHtml(plugin.installWith)}</code><button class="plugin-action-button install-copy-button" type="button" data-copy-install="${escapeHtml(plugin.installWith)}" aria-label="Copy install command" title="Copy install command"><img src="../../assets/copy.png" alt="" aria-hidden="true" /></button></div></div>
+            <div class="portal-id-panel"><span>Author:</span><strong>${escapeHtml(plugin.authorDisplayName || 'Unknown')}</strong></div>
+            <div class="portal-id-panel"><span>Last Updated:</span><strong>${escapeHtml(formatDate(plugin.updatedAt))}</strong></div>
+            <div class="portal-id-panel portal-version-panel"><span>Plugin Version:</span><strong>${escapeHtml(plugin.version || '—')}</strong></div>
+            <div class="portal-id-panel portal-install-panel"><span>Install With:</span><div class="install-copy-row"><code>${escapeHtml(plugin.installWith)}</code><button class="plugin-action-button install-copy-button" type="button" data-copy-install="${escapeHtml(plugin.installWith)}" aria-label="Copy install command" title="Copy install command"><img src="../../assets/copy.png" alt="" aria-hidden="true" /></button></div></div>
           </div>
           ${categories ? `<div class="plugin-detail-categories"><span class="plugin-detail-categories-label">Categories</span><div class="plugin-detail-category-list">${categories}</div></div>` : ''}
         </aside>
@@ -534,7 +534,7 @@
         || state.adminDashboard?.plugins?.find((candidate) => String(candidate.authorId || '') === String(item.authorId || ''))?.authorDisplayName
         || (state.user && String(state.user.discordId) === String(item.authorId) ? state.user.displayName : '')
         || 'Author not set';
-      return `<section class="preview-plugin-surface">${label ? `<div class="preview-state-label">${escapeHtml(label)}</div>` : ''}${cover}<h3>${safeTitle}</h3><p class="preview-byline">By ${escapeHtml(knownAuthor)} · Version ${escapeHtml(item.version || '—')} · ${item.visibility === 'admin' ? 'Admin panel only' : 'Public'}</p>${renderMarkdown(item.description, 'plugin-detail-markdown')}<div class="plugin-detail-categories"><span class="plugin-detail-categories-label">Categories</span><div class="plugin-detail-category-list">${categories || '<span class="plugin-mini-tag">Other</span>'}</div></div><div class="portal-id-panel preview-install"><span>Install with</span><div class="install-copy-row"><code>${escapeHtml(item.installWith || '')}</code></div></div><h4>Commands</h4><div class="command-table-wrap"><table class="portal-command-table"><thead><tr><th>Command(s)</th><th>Description</th></tr></thead><tbody>${commands}</tbody></table></div>${item.notes ? `<h4>Additional notes</h4>${renderMarkdown(item.notes, 'plugin-notes')}` : ''}${images ? `<h4>Images</h4><div class="plugin-media-grid">${images}</div>` : ''}${videos ? `<h4>Videos</h4><div class="plugin-media-grid">${videos}</div>` : ''}</section>`;
+      return `<section class="preview-plugin-surface">${label ? `<div class="preview-state-label">${escapeHtml(label)}</div>` : ''}${cover}<h3>${safeTitle}</h3><p class="preview-byline">By ${escapeHtml(knownAuthor)} · Version ${escapeHtml(item.version || '—')} · ${item.visibility === 'admin' ? 'Admin panel only' : 'Public'}</p>${renderMarkdown(item.description, 'plugin-detail-markdown')}<div class="plugin-detail-categories"><span class="plugin-detail-categories-label">Categories:</span><div class="plugin-detail-category-list">${categories || '<span class="plugin-mini-tag">Other</span>'}</div></div><div class="portal-id-panel preview-install"><span>Install with:</span><div class="install-copy-row"><code>${escapeHtml(item.installWith || '')}</code></div></div><h4>Commands</h4><div class="command-table-wrap"><table class="portal-command-table"><thead><tr><th>Command(s)</th><th>Description</th></tr></thead><tbody>${commands}</tbody></table></div>${item.notes ? `<h4>Additional notes</h4>${renderMarkdown(item.notes, 'plugin-notes')}` : ''}${images ? `<h4>Images</h4><div class="plugin-media-grid">${images}</div>` : ''}${videos ? `<h4>Videos</h4><div class="plugin-media-grid">${videos}</div>` : ''}</section>`;
     };
     $('.plugin-preview-content', dialog).innerHTML = published
       ? `<div class="preview-comparison-grid">${renderContent(published, 'Currently published')}${renderContent(plugin, 'Proposed changes')}</div>`
@@ -941,7 +941,7 @@
       }
       if (event.target.closest('[data-detail-favorite]')) { await handleDetailAction('favorite'); return; }
       const copyInstall = event.target.closest('[data-copy-install]');
-      if (copyInstall) { try { await navigator.clipboard.writeText(copyInstall.dataset.copyInstall || ''); notify('Install command copied.', 'success'); } catch { notify('Could not access the clipboard. Copy the command manually.', 'error'); } return; }
+      if (copyInstall) { try { await navigator.clipboard.writeText(copyInstall.dataset.copyInstall || ''); notify('Installation command copied.', 'success'); } catch { notify('Could not access the clipboard. Copy the command manually.', 'error'); } return; }
       if (event.target.closest('[data-back-catalogue]')) { returnToCatalogue(); return; }
       const editButton = event.target.closest('[data-edit-plugin]');
       if (editButton) {
