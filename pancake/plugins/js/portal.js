@@ -952,13 +952,13 @@
       const approveChange = event.target.closest('[data-approve-change]');
       if (approveChange) { await adminMutation(`/api/admin/change-requests/${encodeURIComponent(approveChange.dataset.approveChange)}/approve`, 'POST', {}, 'Approve and publish these plugin changes?'); return; }
       const rejectChange = event.target.closest('[data-reject-change]');
-      if (rejectChange) { await adminMutation(`/api/admin/change-requests/${encodeURIComponent(rejectChange.dataset.rejectChange)}/reject`, 'POST', {}, 'Reject this plugin change request?'); return; }
+      if (rejectChange) { await adminMutation(`/api/admin/change-requests/${encodeURIComponent(rejectChange.dataset.rejectChange)}/reject`, 'POST', {}, 'Reject this Plugin change request?'); return; }
       const shareButton = event.target.closest('[data-share-plugin]');
       if (shareButton) {
         const pluginId = shareButton.dataset.sharePlugin;
         const shareUrl = `${apiBase}/share/${encodeURIComponent(pluginId)}${window.location.hash || ''}`;
         try { await navigator.clipboard.writeText(shareUrl); notify('Share link copied to clipboard.', 'success'); }
-        catch { window.prompt('Copy this plugin share link:', shareUrl); }
+        catch { window.prompt('Copy this Plugin share link:', shareUrl); }
         return;
       }
       const previewChange = event.target.closest('[data-preview-change]');
@@ -983,7 +983,7 @@
       const deleteButton = event.target.closest('[data-delete-plugin]');
       if (deleteButton) {
         const plugin = state.adminDashboard?.plugins.find((item) => item.pluginId === deleteButton.dataset.deletePlugin);
-        await adminMutation(`/api/admin/plugins/${encodeURIComponent(deleteButton.dataset.deletePlugin)}`, 'DELETE', {}, `Delete “${plugin?.title || deleteButton.dataset.deletePlugin}”? This permanently removes the plugin and its likes/favorites.`);
+        await adminMutation(`/api/admin/plugins/${encodeURIComponent(deleteButton.dataset.deletePlugin)}`, 'DELETE', {}, `Delete “${plugin?.title || deleteButton.dataset.deletePlugin}”? This permanently removes the Plugin and its likes/favorites.`);
         return;
       }
     });
