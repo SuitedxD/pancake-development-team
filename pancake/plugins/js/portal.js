@@ -282,7 +282,7 @@
 
   async function refreshCatalogue() {
     const grid = $('#plugin-grid');
-    grid.innerHTML = `<div class="portal-empty-state"><span class="portal-loader" aria-hidden="true"></span><p>Cooking things up, hold on a sec…</p></div>`;
+    grid.innerHTML = `<div class="portal-empty-state"><span class="portal-loader" aria-hidden="true"></span><p>Almost there…</p></div>`;
     const params = new URLSearchParams();
     if (state.query) params.set('q', state.query);
     if (state.selectedCategory) params.set('category', state.selectedCategory);
