@@ -58,7 +58,7 @@
 .plugin-card-open:hover { color: var(--portal-accent); transform: translate(2px,-2px); }
 .plugin-card h3 { margin: 21px 0 0; color: var(--text); font-size: 23px; line-height: 1.08; letter-spacing: -.045em; overflow-wrap: anywhere; }
 .plugin-author { margin: 9px 0 0; color: #aaa49b; font-size: 11px; }
-.plugin-description { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 3; -webkit-box-orient: vertical; min-height: 67px; margin: 16px 0 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.plugin-description { display: -webkit-box; overflow: hidden; line-clamp: 4; -webkit-box-orient: vertical; min-height: 67px; margin: 16px 0 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
 .plugin-install-line { margin-top: 17px; padding: 11px 12px; min-width: 0; border: 1px solid rgba(255,255,255,.07); border-radius: 11px; background: rgba(0,0,0,.22); }
 .plugin-install-label { display: block; margin-bottom: 6px; color: #8f8a82; font-size: 9px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
 .plugin-install-line code { display: block; color: var(--portal-accent); font: 11px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace; overflow-wrap: anywhere; }
@@ -253,7 +253,7 @@
 .portal-markdown table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; }
 .portal-markdown th, .portal-markdown td { padding: 7px 9px; border: 1px solid var(--portal-border); text-align: left; }
 .plugin-description { display: block; min-height: 67px; margin: 16px 0 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
-.plugin-card-markdown { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
+.plugin-card-markdown { display: -webkit-box; overflow: hidden; line-clamp: 4; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
 .plugin-card-markdown > * { display: inline; margin: 0; }
 .plugin-card-markdown > ul, .plugin-card-markdown > ol, .plugin-card-markdown > pre, .plugin-card-markdown > table, .plugin-card-markdown > blockquote { display: none; }
 .plugin-card-markdown a { pointer-events: auto; }
