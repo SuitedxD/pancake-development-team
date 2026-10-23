@@ -216,7 +216,7 @@
       console.warn('Plugin Portal API is not reachable yet:', error.message);
       $('#plugin-grid').innerHTML = emptyState(
         'Portal backend not connected',
-        'The interface is ready, but the catalogue, views, likes, favorites and Discord sign-in require the separately deployed pancake-development-team-api service and MongoDB. Check the API repository README.'
+        'The interface is ready, but the catalogue, views, likes, favorites and Discord sign-in require a separately deploy. Check the API.'
       );
       $('#results-summary').textContent = 'Waiting for backend connection';
       $('#login-button').textContent = 'Backend setup required';
@@ -291,10 +291,10 @@
       const data = await api(`/api/plugins?${params.toString()}`);
       grid.innerHTML = data.plugins.length
         ? data.plugins.map(pluginCard).join('')
-        : emptyState('No plugins found', 'Try a different search term or choose another category.');
-      $('#results-summary').textContent = `${formatNumber(data.total)} plugin${data.total === 1 ? '' : 's'} found`;
+        : emptyState('No Plugins found', 'Try a different search term or choose another category.');
+      $('#results-summary').textContent = `${formatNumber(data.total)} Plugin${data.total === 1 ? '' : 's'} found`;
     } catch (error) {
-      grid.innerHTML = emptyState('Could not load plugins', error.message);
+      grid.innerHTML = emptyState('Could not load Plugins', error.message);
       $('#results-summary').textContent = 'Catalogue unavailable';
     }
   }
@@ -397,7 +397,7 @@
       renderPluginDetail(data.plugin);
     } catch (error) {
       state.currentPlugin = null;
-      $('#detail-view').innerHTML = `<a class="portal-back" href="${basePath}/">← Back to all plugins</a>${emptyState('Plugin unavailable', error.message)}`;
+      $('#detail-view').innerHTML = `<a class="portal-back" href="${basePath}/">← Back to all Plugins</a>${emptyState('Plugin unavailable', error.message)}`;
       showMode('detail');
     }
   }
@@ -413,10 +413,10 @@
     try {
       const data = await api('/api/profile');
       $('#profile-view').innerHTML = `
-        <div class="portal-page-heading"><div><h1 id="profile-title">My Library</h1><p>Browse your published plugins, favorites and liked plugins.</p></div><button class="portal-user-button" type="button" data-back-catalogue>← Browse plugins</button></div>
-        <section class="portal-library-section"><h2>Published By You <span class="plugin-command-count">${(data.authored || []).length}</span></h2><div class="portal-library-grid">${(data.authored || []).length ? data.authored.map(renderLibraryCard).join('') : emptyState('No published plugins yet', 'Plugins authored by your Discord account will appear here.')}</div></section>
-        <section class="portal-library-section"><h2>Saved Favorites <span class="plugin-command-count">${data.favorites.length}</span></h2><div class="portal-library-grid">${data.favorites.length ? data.favorites.map(renderLibraryCard).join('') : emptyState('No favorites yet', 'Open a plugin and choose “Add to favorites” to keep it here.')}</div></section>
-        <section class="portal-library-section"><h2>Liked Plugins <span class="plugin-command-count">${data.liked.length}</span></h2><div class="portal-library-grid">${data.liked.length ? data.liked.map(renderLibraryCard).join('') : emptyState('No likes yet', 'Like a plugin to find it here later.')}</div></section>`;
+        <div class="portal-page-heading"><div><h1 id="profile-title">My Library</h1><p>Browse your favorites, liked Plugins, and published ones you authored.</p></div><button class="portal-user-button" type="button" data-back-catalogue>← Browse Plugins</button></div>
+        <section class="portal-library-section"><h2>Saved Favorites: <span class="plugin-command-count">${data.favorites.length}</span></h2><div class="portal-library-grid">${data.favorites.length ? data.favorites.map(renderLibraryCard).join('') : emptyState('No favorites yet', 'Open a Plugin and choose “Add to favorites” to keep it here.')}</div></section>
+        <section class="portal-library-section"><h2>Liked Plugins: <span class="plugin-command-count">${data.liked.length}</span></h2><div class="portal-library-grid">${data.liked.length ? data.liked.map(renderLibraryCard).join('') : emptyState('No likes yet', 'Like a Plugin to find it here later.')}</div></section>
+        <section class="portal-library-section"><h2>Published by You: <span class="plugin-command-count">${(data.authored || []).length}</span></h2><div class="portal-library-grid">${(data.authored || []).length ? data.authored.map(renderLibraryCard).join('') : emptyState('No published Plugins yet', 'Plugins authored by your Discord account will appear here. For more info about creating your own Plugins, check our [Plugin Creation Guide](https://github.com/SuitedxD/Pancake/blob/main/docs/plugins-guide.md).')}</div></section>`;
     } catch (error) {
       $('#profile-view').innerHTML = `${emptyState('Could not load your library', error.message)}<div class="form-actions"><button class="portal-user-button" type="button" data-back-catalogue>Back to plugins</button></div>`;
     }
