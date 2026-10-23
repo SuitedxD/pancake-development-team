@@ -234,7 +234,7 @@
       loginButton.hidden = true;
       profileButton.hidden = false;
       logoutButton.hidden = false;
-      profileButton.innerHTML = `${state.user.avatarUrl ? `<img class="portal-avatar" src="${escapeHtml(state.user.avatarUrl)}" alt="" referrerpolicy="no-referrer" />` : '<span class="portal-avatar-fallback">◉</span>'} <span>My library</span>`;
+      profileButton.innerHTML = `${state.user.avatarUrl ? `<img class="portal-avatar" src="${escapeHtml(state.user.avatarUrl)}" alt="" referrerpolicy="no-referrer" />` : '<span class="portal-avatar-fallback">◉</span>'} <span>My Library</span>`;
       adminButton.hidden = !state.canAccessAdmin;
     } else {
       loginButton.hidden = false;
@@ -282,7 +282,7 @@
 
   async function refreshCatalogue() {
     const grid = $('#plugin-grid');
-    grid.innerHTML = `<div class="portal-empty-state"><span class="portal-loader" aria-hidden="true"></span><p>Loading the catalogue…</p></div>`;
+    grid.innerHTML = `<div class="portal-empty-state"><span class="portal-loader" aria-hidden="true"></span><p>Hold on! We're still cooking things up here, it'll take less than a minute ;)…</p></div>`;
     const params = new URLSearchParams();
     if (state.query) params.set('q', state.query);
     if (state.selectedCategory) params.set('category', state.selectedCategory);
@@ -390,7 +390,7 @@
 
   async function loadPluginDetail(pluginId) {
     showMode('detail');
-    $('#detail-view').innerHTML = emptyState('Loading plugin…', 'Fetching plugin details.');
+    $('#detail-view').innerHTML = emptyState('Adding some syrup…', 'Your order will be ready at any moment.');
     try {
       const data = await api(`/api/plugins/${encodeURIComponent(pluginId)}`);
       state.currentPlugin = data.plugin;
@@ -409,14 +409,14 @@
   async function loadProfile() {
     if (!state.user) return login();
     showMode('profile');
-    $('#profile-view').innerHTML = `<div class="portal-empty-state"><span class="portal-loader" aria-hidden="true"></span><p>Loading your library…</p></div>`;
+    $('#profile-view').innerHTML = `<div class="portal-empty-state"><span class="portal-loader" aria-hidden="true"></span><p>Loading your Library…</p></div>`;
     try {
       const data = await api('/api/profile');
       $('#profile-view').innerHTML = `
-        <div class="portal-page-heading"><div><div class="kicker">Your account</div><h1 id="profile-title">My library</h1><p>Browse your favorites, liked plugins, and published plugins you authored.</p></div><button class="portal-user-button" type="button" data-back-catalogue>← Browse plugins</button></div>
-        <section class="portal-library-section"><h2>Published by you <span class="plugin-command-count">${(data.authored || []).length}</span></h2><div class="portal-library-grid">${(data.authored || []).length ? data.authored.map(renderLibraryCard).join('') : emptyState('No published plugins yet', 'Plugins authored by your Discord account will appear here.')}</div></section>
-        <section class="portal-library-section"><h2>Saved favorites <span class="plugin-command-count">${data.favorites.length}</span></h2><div class="portal-library-grid">${data.favorites.length ? data.favorites.map(renderLibraryCard).join('') : emptyState('No favorites yet', 'Open a plugin and choose “Add to favorites” to keep it here.')}</div></section>
-        <section class="portal-library-section"><h2>Liked plugins <span class="plugin-command-count">${data.liked.length}</span></h2><div class="portal-library-grid">${data.liked.length ? data.liked.map(renderLibraryCard).join('') : emptyState('No likes yet', 'Like a plugin to find it here later.')}</div></section>`;
+        <div class="portal-page-heading"><div><h1 id="profile-title">My Library</h1><p>Browse your published plugins, favorites and liked plugins.</p></div><button class="portal-user-button" type="button" data-back-catalogue>← Browse plugins</button></div>
+        <section class="portal-library-section"><h2>Published By You <span class="plugin-command-count">${(data.authored || []).length}</span></h2><div class="portal-library-grid">${(data.authored || []).length ? data.authored.map(renderLibraryCard).join('') : emptyState('No published plugins yet', 'Plugins authored by your Discord account will appear here.')}</div></section>
+        <section class="portal-library-section"><h2>Saved Favorites <span class="plugin-command-count">${data.favorites.length}</span></h2><div class="portal-library-grid">${data.favorites.length ? data.favorites.map(renderLibraryCard).join('') : emptyState('No favorites yet', 'Open a plugin and choose “Add to favorites” to keep it here.')}</div></section>
+        <section class="portal-library-section"><h2>Liked Plugins <span class="plugin-command-count">${data.liked.length}</span></h2><div class="portal-library-grid">${data.liked.length ? data.liked.map(renderLibraryCard).join('') : emptyState('No likes yet', 'Like a plugin to find it here later.')}</div></section>`;
     } catch (error) {
       $('#profile-view').innerHTML = `${emptyState('Could not load your library', error.message)}<div class="form-actions"><button class="portal-user-button" type="button" data-back-catalogue>Back to plugins</button></div>`;
     }
