@@ -354,7 +354,7 @@
         <div class="plugin-detail-actions">
           <button class="plugin-action-button${plugin.liked ? ' is-active' : ''}" id="detail-like-button" type="button" data-detail-like>♡ <span>${plugin.liked ? 'Liked' : 'Like'}</span></button>
           <button class="plugin-action-button${plugin.favorited ? ' is-active' : ''}" id="detail-favorite-button" type="button" data-detail-favorite>☆ <span>${plugin.favorited ? 'Saved to favorites' : 'Add to favorites'}</span></button>
-          ${state.user && String(state.user.discordId) === String(plugin.authorId) ? `<button class="plugin-action-button" type="button" data-author-edit>✎ <span>Edit plugin</span></button>${plugin.pendingChange?.fields ? '<button class="plugin-action-button" type="button" data-preview-author-change>◉ <span>Preview unreviewed changes</span></button>' : ''}` : ''}
+          ${state.user && String(state.user.discordId) === String(plugin.authorId) ? `<button class="plugin-action-button" type="button" data-author-edit>✎ <span>Edit Plugin</span></button>${plugin.pendingChange?.fields ? '<button class="plugin-action-button" type="button" data-preview-author-change>◉ <span>Preview unreviewed changes</span></button>' : ''}` : ''}
           <button class="plugin-action-button" type="button" data-share-plugin="${escapeHtml(plugin.pluginId)}">↗ <span>Share</span></button>
           <div class="plugin-detail-metrics"><span><strong id="detail-like-count">${formatNumber(plugin.likesCount)}</strong> likes</span><span><strong>${formatNumber(plugin.views)}</strong> views</span><span><strong>${formatNumber(plugin.commandCount)}</strong> commands</span></div>
         </div>
@@ -372,7 +372,7 @@
         </aside>
         <section class="portal-panel plugin-commands-panel" aria-labelledby="plugin-commands-title">
           <h2 id="plugin-commands-title">Commands</h2>
-          <p class="portal-panel-intro">${formatNumber(plugin.commandCount)} command${plugin.commandCount === 1 ? '' : 's'} included with this plugin.</p>
+          <p class="portal-panel-intro">${formatNumber(plugin.commandCount)} command${plugin.commandCount === 1 ? '' : 's'} included with this Plugin.</p>
           <div class="command-table-wrap"><table class="portal-command-table"><thead><tr><th>Command(s)</th><th>Description</th></tr></thead><tbody>${commands}</tbody></table></div>
           ${plugin.notes ? renderMarkdown(plugin.notes, 'plugin-notes') : ''}
         </section>
@@ -582,7 +582,7 @@
     const existing = $('#author-edit-dialog');
     if (!existing) {
       const dialog = document.createElement('dialog'); dialog.id = 'author-edit-dialog'; dialog.className = 'portal-dialog portal-dialog-wide';
-      dialog.innerHTML = '<div class="dialog-header"><div><div class="kicker">Author workspace</div><h2>Request plugin changes</h2></div><button class="dialog-close" type="button" data-close-dialog="author-edit-dialog">×</button></div><p class="dialog-copy">Your changes are sent to Pending changes for an administrator to review. The public plugin stays unchanged until approval.</p><form id="author-edit-form" class="portal-form"></form>';
+      dialog.innerHTML = '<div class="dialog-header"><div><div class="kicker">Author workspace</div><h2>Request Plugin changes</h2></div><button class="dialog-close" type="button" data-close-dialog="author-edit-dialog">×</button></div><p class="dialog-copy"> Welcome to this space exclusively for authors! Here, you can request changes to your Plugin page. Change requests are manually reviewed by our administrators, so please ensure there are no errors or inconsistencies. Your Plugin page will remain unchanged until the new updates are approved. Submitting multiple identical requests will not improve your position in the queue or speed up the approval process. </p><form id="author-edit-form" class="portal-form"></form>';
       document.body.append(dialog);
       const form = $('#author-edit-form'); configurePluginForm(form, { initialData: plugin, actionLabel: 'Submit for review', authorEditing: true });
       form.addEventListener('submit', async (event) => {
