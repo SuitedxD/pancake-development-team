@@ -385,3 +385,26 @@
   .plugin-detail-info { grid-template-columns: minmax(0, 1fr); }
   .portal-install-panel { grid-column: auto; }
 }
+
+/* Copy button for fenced Markdown code blocks. */
+.portal-markdown .markdown-code-block {
+  position: relative;
+  min-width: 0;
+  margin: .7em 0;
+}
+.portal-markdown .markdown-code-block > pre {
+  margin: 0;
+  padding-right: 54px;
+}
+.portal-markdown .markdown-copy-button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  border-color: rgba(255,255,255,.16);
+  background: rgba(16,16,17,.92);
+}
+.portal-markdown .markdown-copy-button:hover {
+  background: rgba(255,255,255,.1);
+}
+

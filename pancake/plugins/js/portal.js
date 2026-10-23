@@ -75,6 +75,21 @@
           link.setAttribute('target', '_blank');
           link.setAttribute('rel', 'noopener noreferrer');
         });
+        container.querySelectorAll('pre').forEach((pre) => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'markdown-code-block';
+          pre.parentNode.insertBefore(wrapper, pre);
+          wrapper.appendChild(pre);
+
+          const copyButton = document.createElement('button');
+          copyButton.className = 'plugin-action-button install-copy-button markdown-copy-button';
+          copyButton.type = 'button';
+          copyButton.dataset.copyMarkdownCode = '';
+          copyButton.setAttribute('aria-label', 'Copy code block');
+          copyButton.title = 'Copy code';
+          copyButton.innerHTML = '<img src="../../assets/copy.png" alt="" aria-hidden="true" />';
+          wrapper.appendChild(copyButton);
+        });
         return `<div class="${className}">${container.innerHTML}</div>`;
       } catch (error) {
         console.warn('Markdown rendering failed; showing escaped plain text instead.', error);
@@ -946,6 +961,17 @@
       if (event.target.closest('[data-detail-favorite]')) { await handleDetailAction('favorite'); return; }
       const copyInstall = event.target.closest('[data-copy-install]');
       if (copyInstall) { try { await navigator.clipboard.writeText(copyInstall.dataset.copyInstall || ''); notify('Installation command copied.', 'success'); } catch { notify('Could not access the clipboard. Copy the command manually.', 'error'); } return; }
+      const copyMarkdownCode = event.target.closest('[data-copy-markdown-code]');
+      if (copyMarkdownCode) {
+        const codeBlock = copyMarkdownCode.closest('.markdown-code-block')?.querySelector('pre');
+        try {
+          await navigator.clipboard.writeText(codeBlock?.textContent || '');
+          notify('Code copied to clipboard.', 'success');
+        } catch {
+          notify('Could not access the clipboard. Copy the code manually.', 'error');
+        }
+        return;
+      }
       if (event.target.closest('[data-back-catalogue]')) { returnToCatalogue(); return; }
       const editButton = event.target.closest('[data-edit-plugin]');
       if (editButton) {
