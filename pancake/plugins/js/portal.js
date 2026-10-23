@@ -295,10 +295,10 @@
       const data = await api(`/api/plugins?${params.toString()}`);
       grid.innerHTML = data.plugins.length
         ? data.plugins.map(pluginCard).join('')
-        : emptyState('No Plugins found', 'Try a different search term or choose another category.');
-      $('#results-summary').textContent = `${formatNumber(data.total)} Plugin${data.total === 1 ? '' : 's'} found.`;
+        : emptyState('No plugins found', 'Try a different search term or choose another category.');
+      $('#results-summary').textContent = `${formatNumber(data.total)} plugin${data.total === 1 ? '' : 's'} found.`;
     } catch (error) {
-      grid.innerHTML = emptyState('Could not load Plugins', error.message);
+      grid.innerHTML = emptyState('Could not load plugins', error.message);
       $('#results-summary').textContent = 'Catalogue unavailable';
     }
   }
@@ -349,7 +349,7 @@
         ${youtubeVideos.length ? `<div class="plugin-media-grid plugin-video-grid">${youtubeVideos.map((url, index) => `<iframe class="plugin-video-frame" src="${url}" title="${escapeHtml(plugin.title)} video ${index + 1}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`).join('')}</div>` : ''}
       </section>` : '';
     $('#detail-view').innerHTML = `
-      <a class="portal-back" href="${basePath}/">← Back to all Plugins</a>
+      <a class="portal-back" href="${basePath}/">← Back to all plugins</a>
       <header class="plugin-detail-header">
         ${plugin.coverImage && /^https:\/\//i.test(plugin.coverImage) ? `<img class="plugin-detail-cover" src="${escapeHtml(plugin.coverImage)}" alt="${escapeHtml(plugin.title)} cover" decoding="async" referrerpolicy="no-referrer" />` : ''}
         <h1>${escapeHtml(plugin.title)}</h1>
@@ -358,7 +358,7 @@
         <div class="plugin-detail-actions">
           <button class="plugin-action-button${plugin.liked ? ' is-active' : ''}" id="detail-like-button" type="button" data-detail-like>♡ <span>${plugin.liked ? 'Liked' : 'Like'}</span></button>
           <button class="plugin-action-button${plugin.favorited ? ' is-active' : ''}" id="detail-favorite-button" type="button" data-detail-favorite>☆ <span>${plugin.favorited ? 'Saved to favorites' : 'Add to favorites'}</span></button>
-          ${state.user && String(state.user.discordId) === String(plugin.authorId) ? `<button class="plugin-action-button" type="button" data-author-edit>✎ <span>Edit Plugin</span></button>${plugin.pendingChange?.fields ? '<button class="plugin-action-button" type="button" data-preview-author-change>◉ <span>Preview unreviewed changes</span></button>' : ''}` : ''}
+          ${state.user && String(state.user.discordId) === String(plugin.authorId) ? `<button class="plugin-action-button" type="button" data-author-edit>✎ <span>Edit plugin</span></button>${plugin.pendingChange?.fields ? '<button class="plugin-action-button" type="button" data-preview-author-change>◉ <span>Preview unreviewed changes</span></button>' : ''}` : ''}
           <button class="plugin-action-button" type="button" data-share-plugin="${escapeHtml(plugin.pluginId)}">↗ <span>Share</span></button>
           <div class="plugin-detail-metrics"><span><strong id="detail-like-count">${formatNumber(plugin.likesCount)}</strong> likes</span><span><strong>${formatNumber(plugin.views)}</strong> views</span><span><strong>${formatNumber(plugin.commandCount)}</strong> commands</span></div>
         </div>
@@ -376,7 +376,7 @@
         </aside>
         <section class="portal-panel plugin-commands-panel" aria-labelledby="plugin-commands-title">
           <h2 id="plugin-commands-title">Commands</h2>
-          <p class="portal-panel-intro">${formatNumber(plugin.commandCount)} command${plugin.commandCount === 1 ? '' : 's'} included with this Plugin.</p>
+          <p class="portal-panel-intro">${formatNumber(plugin.commandCount)} command${plugin.commandCount === 1 ? '' : 's'} included with this plugin.</p>
           <div class="command-table-wrap"><table class="portal-command-table"><thead><tr><th>Command(s)</th><th>Description</th></tr></thead><tbody>${commands}</tbody></table></div>
           ${plugin.notes ? renderMarkdown(plugin.notes, 'plugin-notes') : ''}
         </section>
@@ -401,7 +401,7 @@
       renderPluginDetail(data.plugin);
     } catch (error) {
       state.currentPlugin = null;
-      $('#detail-view').innerHTML = `<a class="portal-back" href="${basePath}/">← Back to all Plugins</a>${emptyState('Plugin unavailable', error.message)}`;
+      $('#detail-view').innerHTML = `<a class="portal-back" href="${basePath}/">← Back to all plugins</a>${emptyState('Plugin unavailable', error.message)}`;
       showMode('detail');
     }
   }
@@ -417,10 +417,10 @@
     try {
       const data = await api('/api/profile');
       $('#profile-view').innerHTML = `
-        <div class="portal-page-heading"><div><h1 id="profile-title">My Library</h1><p>Browse your favorites, liked Plugins, and published ones you authored.</p></div><button class="portal-user-button" type="button" data-back-catalogue>← Browse Plugins</button></div>
-        <section class="portal-library-section"><h2>Saved favorites: <span class="plugin-command-count">${data.favorites.length}</span></h2><div class="portal-library-grid">${data.favorites.length ? data.favorites.map(renderLibraryCard).join('') : emptyState('No favorites yet', 'Open a Plugin and choose “Add to favorites” to keep it here.')}</div></section>
-        <section class="portal-library-section"><h2>Liked Plugins: <span class="plugin-command-count">${data.liked.length}</span></h2><div class="portal-library-grid">${data.liked.length ? data.liked.map(renderLibraryCard).join('') : emptyState('No likes yet', 'Like a Plugin to find it here later.')}</div></section>
-        <section class="portal-library-section"><h2>Published by you: <span class="plugin-command-count">${(data.authored || []).length}</span></h2><div class="portal-library-grid">${(data.authored || []).length ? data.authored.map(renderLibraryCard).join('') : emptyState('No published Plugins yet', 'Plugins authored by your Discord account will appear here. For more info about creating your own Plugins, check our <a href="https://github.com/SuitedxD/Pancake/blob/main/docs/plugins-guide.md" Plugin Creation Guide</a>.', '', true)}</div></section>`;
+        <div class="portal-page-heading"><div><h1 id="profile-title">My Library</h1><p>Browse your favorites, liked plugins, and published ones you authored.</p></div><button class="portal-user-button" type="button" data-back-catalogue>← Browse plugins</button></div>
+        <section class="portal-library-section"><h2>Saved favorites: <span class="plugin-command-count">${data.favorites.length}</span></h2><div class="portal-library-grid">${data.favorites.length ? data.favorites.map(renderLibraryCard).join('') : emptyState('No favorites yet', 'Open a plugin and choose “Add to favorites” to keep it here.')}</div></section>
+        <section class="portal-library-section"><h2>Liked plugins: <span class="plugin-command-count">${data.liked.length}</span></h2><div class="portal-library-grid">${data.liked.length ? data.liked.map(renderLibraryCard).join('') : emptyState('No likes yet', 'Like a plugin to find it here later.')}</div></section>
+        <section class="portal-library-section"><h2>Published by you: <span class="plugin-command-count">${(data.authored || []).length}</span></h2><div class="portal-library-grid">${(data.authored || []).length ? data.authored.map(renderLibraryCard).join('') : emptyState('No published plugins yet', 'Plugins authored by your Discord account will appear here. For more info about creating your own plugins, check our <a href="https://github.com/SuitedxD/Pancake/blob/main/docs/plugins-guide.md" Plugin Creation Guide</a>.', '', true)}</div></section>`;
     } catch (error) {
       $('#profile-view').innerHTML = `${emptyState('Could not load your library', error.message)}<div class="form-actions"><button class="portal-user-button" type="button" data-back-catalogue>Back to plugins</button></div>`;
     }
@@ -586,7 +586,7 @@
     const existing = $('#author-edit-dialog');
     if (!existing) {
       const dialog = document.createElement('dialog'); dialog.id = 'author-edit-dialog'; dialog.className = 'portal-dialog portal-dialog-wide';
-      dialog.innerHTML = '<div class="dialog-header"><div><div class="kicker">Author workspace</div><h2>Request Plugin changes</h2></div><button class="dialog-close" type="button" data-close-dialog="author-edit-dialog">×</button></div><p class="dialog-copy"> Welcome to this space exclusively for authors! Here, you can request changes to your Plugin page. Change requests are manually reviewed by our administrators, so please ensure there are no errors or inconsistencies. Your Plugin page will remain unchanged until the new updates are approved. Submitting multiple identical requests will not improve your position in the queue or speed up the approval process. Please note that once the changes have been applied, they cannot be reversed.</p><form id="author-edit-form" class="portal-form"></form>';
+      dialog.innerHTML = '<div class="dialog-header"><div><div class="kicker">Author workspace</div><h2>Request plugin changes</h2></div><button class="dialog-close" type="button" data-close-dialog="author-edit-dialog">×</button></div><p class="dialog-copy"> Welcome to this space exclusively for authors! Here, you can request changes to your plugin page. Change requests are manually reviewed by our administrators, so please ensure there are no errors or inconsistencies. Your plugin page will remain unchanged until the new updates are approved. Submitting multiple identical requests will not improve your position in the queue or speed up the approval process. Please note that once the changes have been applied, they cannot be reversed.</p><form id="author-edit-form" class="portal-form"></form>';
       document.body.append(dialog);
       const form = $('#author-edit-form'); configurePluginForm(form, { initialData: plugin, actionLabel: 'Submit for review', authorEditing: true });
       form.addEventListener('submit', async (event) => {
@@ -956,13 +956,13 @@
       const approveChange = event.target.closest('[data-approve-change]');
       if (approveChange) { await adminMutation(`/api/admin/change-requests/${encodeURIComponent(approveChange.dataset.approveChange)}/approve`, 'POST', {}, 'Approve and publish these plugin changes?'); return; }
       const rejectChange = event.target.closest('[data-reject-change]');
-      if (rejectChange) { await adminMutation(`/api/admin/change-requests/${encodeURIComponent(rejectChange.dataset.rejectChange)}/reject`, 'POST', {}, 'Reject this Plugin change request?'); return; }
+      if (rejectChange) { await adminMutation(`/api/admin/change-requests/${encodeURIComponent(rejectChange.dataset.rejectChange)}/reject`, 'POST', {}, 'Reject this plugin change request?'); return; }
       const shareButton = event.target.closest('[data-share-plugin]');
       if (shareButton) {
         const pluginId = shareButton.dataset.sharePlugin;
         const shareUrl = `${apiBase}/share/${encodeURIComponent(pluginId)}${window.location.hash || ''}`;
         try { await navigator.clipboard.writeText(shareUrl); notify('Share link copied to clipboard.', 'success'); }
-        catch { window.prompt('Copy this Plugin share link:', shareUrl); }
+        catch { window.prompt('Copy this plugin share link:', shareUrl); }
         return;
       }
       const previewChange = event.target.closest('[data-preview-change]');
@@ -987,7 +987,7 @@
       const deleteButton = event.target.closest('[data-delete-plugin]');
       if (deleteButton) {
         const plugin = state.adminDashboard?.plugins.find((item) => item.pluginId === deleteButton.dataset.deletePlugin);
-        await adminMutation(`/api/admin/plugins/${encodeURIComponent(deleteButton.dataset.deletePlugin)}`, 'DELETE', {}, `Delete “${plugin?.title || deleteButton.dataset.deletePlugin}”? This permanently removes the Plugin and its likes/favorites.`);
+        await adminMutation(`/api/admin/plugins/${encodeURIComponent(deleteButton.dataset.deletePlugin)}`, 'DELETE', {}, `Delete “${plugin?.title || deleteButton.dataset.deletePlugin}”? This permanently removes the plugin and its likes/favorites.`);
         return;
       }
     });
