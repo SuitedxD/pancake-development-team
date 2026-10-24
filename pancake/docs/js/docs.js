@@ -34,7 +34,7 @@
     editorTopic: '', editorCategories: [],
     selectedDocument: null, feedback: null, pendingChange: null,
     adminData: { documents: [], requests: [] }, editorMode: 'submission', editorDocumentId: '',
-    editorOrder: 0, previewVisible: false
+    editorOrder: 0, previewVisible: false, catalogueSnapshot: null
   };
 
   const $ = (selector, root = document) => root.querySelector(selector);
@@ -143,6 +143,14 @@
   }
 
   function setMode(mode) {
+    const currentRouteParams = new URLSearchParams(window.location.search);
+    if (state.currentMode === 'catalogue' && mode !== 'catalogue' && !currentRouteParams.has('doc') && !currentRouteParams.has('library')) {
+      state.catalogueSnapshot = {
+        scrollY: window.scrollY,
+        url: `${window.location.pathname}${window.location.search}`,
+        query: state.query, selectedTopic: state.selectedTopic, selectedCategory: state.selectedCategory
+      };
+    }
     if (state.currentMode === 'admin' && mode !== 'admin' && state.adminUnlocked && state.accessToken) {
       api('/api/admin/leave', { method: 'POST', body: {} }).catch(() => {});
       state.adminUnlocked = false;
@@ -470,7 +478,8 @@
     return true;
   }
 
-  function renderDetail(documentItem, feedback, pendingChange = null) {
+  function renderDetail(documentItem, feedback, pendingChange = null, options = {}) {
+    const restoreScrollY = Number.isFinite(options.scrollY) ? options.scrollY : window.scrollY;
     if (!documentItem || typeof documentItem !== 'object') {
       state.selectedDocument = null; state.feedback = null; state.pendingChange = null;
       $('#detail-view').innerHTML = '<div class="docs-empty-state"><span class="docs-empty-mark" aria-hidden="true">!</span><h3>Could not open this document</h3><p>This document was not found, is private, or is no longer published.</p><button class="docs-small-button" data-go-catalogue type="button">← Back to all docs</button></div>';
@@ -501,7 +510,7 @@
             <div class="docs-article-actions">
               <button type="button" class="docs-action-button${documentItem.favorite ? ' is-active' : ''}" data-action="favorite-document" data-document-id="${escapeHtml(documentItem.documentId)}">☆ <span>${escapeHtml(favoriteLabel)}</span></button>
               ${owner && getSource(documentItem) !== 'official' ? `<button type="button" class="docs-action-button" data-action="edit-document" data-document-id="${escapeHtml(documentItem.documentId)}">✎ <span>Edit doc</span></button>` : ''}
-              <button type="button" class="docs-action-button" data-action="share-document" data-document-id="${escapeHtml(documentItem.documentId)}">↗ <span>Share link</span></button>
+              <button type="button" class="docs-action-button" data-action="share-document" data-document-id="${escapeHtml(documentItem.documentId)}">↗ <span>Share</span></button>
               <div class="docs-detail-metrics">${source === 'official' ? '' : `<span><strong>${formatNumber(getViews(documentItem))}</strong> views</span>`}<span><strong>${formatNumber(getUsefulCount(documentItem))}</strong> found this helpful</span></div>
             </div>
             ${pendingNotice}
@@ -517,13 +526,18 @@
     setMode('detail');
     buildToc();
     const hash = window.location.hash;
-    if (hash && !hash.startsWith('#auth_code')) {
+    if (options.scrollToHash !== false && hash && !hash.startsWith('#auth_code')) {
       const id = decodeURIComponentSafe(hash.slice(1));
+      // Explicit Markdown heading links are the only detail-view action that should scroll.
       requestAnimationFrame(() => scrollToSection(id, { updateUrl: false }));
-    } else window.scrollTo({ top: 0, behavior: 'auto' });
+    } else {
+      // Re-rendering a document (for example after voting) must not move the reader.
+      requestAnimationFrame(() => window.scrollTo({ top: restoreScrollY, behavior: 'auto' }));
+    }
   }
 
   async function loadDocument(documentId) {
+    const requestedScrollY = window.scrollY;
     setMode('detail');
     $('#detail-view').innerHTML = '<div class="docs-loading"><span class="docs-loader" aria-hidden="true"></span><span>Opening document…</span></div>';
     try {
@@ -534,18 +548,40 @@
       state.allDocuments = state.allDocuments.map((item) => item.documentId === result.document.documentId
         ? { ...item, views: getViews(result.document), usefulCount: getUsefulCount(result.document), coverImage: result.document.coverImage || item.coverImage }
         : item);
-      renderDetail(result.document, result.feedback, result.pendingChange);
+      renderDetail(result.document, result.feedback, result.pendingChange, { scrollY: requestedScrollY });
     } catch (error) {
       $('#detail-view').innerHTML = `<div class="docs-empty-state"><span class="docs-empty-mark" aria-hidden="true">!</span><h3>Could not open this document</h3><p>${escapeHtml(error.message)}</p><button class="docs-small-button" data-go-catalogue type="button">← Back to all docs</button></div>`;
+      requestAnimationFrame(() => window.scrollTo({ top: requestedScrollY, behavior: 'auto' }));
     }
   }
+  function catalogueUrlFromState() {
+    const url = new URL(`${basePath}/`, window.location.origin);
+    if (state.query.trim()) url.searchParams.set('q', state.query.trim());
+    if (state.selectedTopic) url.searchParams.set('topic', state.selectedTopic);
+    if (state.selectedCategory) url.searchParams.set('category', state.selectedCategory);
+    return `${url.pathname}${url.search}`;
+  }
   function navigateCatalogue(updateHistory = true) {
-    state.selectedTopic = ''; state.selectedCategory = ''; state.query = '';
+    const wasDetail = state.currentMode === 'detail';
+    const snapshot = state.catalogueSnapshot;
+    const destination = snapshot?.url || catalogueUrlFromState();
+    const restoreY = Number.isFinite(snapshot?.scrollY) ? snapshot.scrollY : window.scrollY;
     resetShareMetadata();
-    if ($('#docs-search')) $('#docs-search').value = '';
-    setMode('catalogue'); if (updateHistory) history.pushState({}, '', `${basePath}/`); renderCatalogue(); window.scrollTo({ top: 0, behavior: 'smooth' });
+    if ($('#docs-search')) $('#docs-search').value = state.query;
+    setMode('catalogue');
+    if (updateHistory) {
+      // Returning to the catalogue should not create a history entry that reopens the previous view.
+      if (wasDetail || snapshot) history.replaceState({}, '', destination);
+      else history.pushState({}, '', destination);
+    }
+    renderCatalogue();
+    requestAnimationFrame(() => window.scrollTo({ top: restoreY, behavior: 'auto' }));
   }
   function navigateDocument(documentId, updateHistory = true) {
+    // Capture the catalogue scroll/filter state before switching views.
+    if (state.currentMode === 'catalogue') {
+      state.catalogueSnapshot = { scrollY: window.scrollY, url: `${window.location.pathname}${window.location.search}`, query: state.query, selectedTopic: state.selectedTopic, selectedCategory: state.selectedCategory };
+    }
     if (updateHistory) history.pushState({}, '', `${basePath}/?doc=${encodeURIComponent(documentId)}`);
     loadDocument(documentId);
   }
@@ -670,7 +706,7 @@
       const result = await api(`/api/docs/${encodeURIComponent(documentId)}/favorite`, { method: 'POST', body: {} });
       if (state.selectedDocument?.documentId === documentId) {
         state.selectedDocument.favorite = Boolean(result.favorited);
-        renderDetail(state.selectedDocument, state.feedback, state.pendingChange);
+        renderDetail(state.selectedDocument, state.feedback, state.pendingChange, { scrollY: window.scrollY, scrollToHash: false });
       }
       state.allDocuments = state.allDocuments.map((item) => item.documentId === documentId ? { ...item, favorite: Boolean(result.favorited) } : item);
       notify(result.favorited ? 'Saved to My Library.' : 'Removed from saved documents.');
@@ -682,7 +718,7 @@
       state.feedback = result;
       if (state.selectedDocument?.documentId === documentId) {
         state.selectedDocument.usefulCount = numericValue(result.yes, result.usefulCount, result.helpfulCount, state.selectedDocument.usefulCount);
-        renderDetail(state.selectedDocument, result, state.pendingChange);
+        renderDetail(state.selectedDocument, result, state.pendingChange, { scrollY: window.scrollY, scrollToHash: false });
         updateCatalogueCountFor(documentId, state.selectedDocument.usefulCount);
       }
       notify('Thanks for helping us improve the documentation.');
@@ -725,6 +761,7 @@
   }
   async function openLibrary({ focusPending = false } = {}) {
     if (!state.user) { login(); return; }
+    const requestedScrollY = window.scrollY;
     setMode('library');
     $('#library-view').innerHTML = '<div class="docs-loading"><span class="docs-loader" aria-hidden="true"></span><span>Opening your library…</span></div>';
     try {
@@ -737,8 +774,8 @@
         <section class="docs-library-section"><div class="docs-library-section-heading"><div><h3>Saved favorites <span class="docs-count-pill">${formatNumber(favorites.length)}</span></h3><p>Documents you bookmarked for later.</p></div><button class="docs-text-button" type="button" data-go-catalogue>Browse docs ↗</button></div><div class="docs-library-grid">${favorites.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">You have not saved any documents yet.</div>'}</div></section>
         <section class="docs-library-section"><div class="docs-library-section-heading"><div><h3>Published by you <span class="docs-count-pill">${formatNumber(authored.length)}</span></h3><p>Your documentation that has been approved and published.</p></div></div><div class="docs-library-grid">${authored.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">You have not published any documents yet.</div>'}</div></section>
         <section class="docs-library-section" id="docs-pending-library"><div class="docs-library-section-heading"><div><h3>Pending for approval <span class="docs-count-pill">${formatNumber(pending.length)}</span></h3><p>Submissions and edits waiting for the documentation team to review.</p></div></div><div class="docs-library-grid docs-pending-grid">${pending.map(pendingSubmissionCard).join('') || '<div class="docs-inline-empty">You have no documents waiting for approval.</div>'}</div></section>`;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      if (focusPending) requestAnimationFrame(() => $('#docs-pending-library')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      // Switching to the library is not a reason to jump the page; keep the current viewport.
+      requestAnimationFrame(() => window.scrollTo({ top: requestedScrollY, behavior: 'auto' }));
     } catch (error) {
       $('#library-view').innerHTML = `<div class="docs-empty-state"><h3>Could not load your library</h3><p>${escapeHtml(error.message)}</p><button class="docs-small-button" type="button" data-go-catalogue>← Back to all docs</button></div>`;
     }
@@ -961,10 +998,16 @@
     if (documentId && /^\d{20,30}$/.test(documentId)) {
       if (state.currentMode === 'detail' && String(state.selectedDocument?.documentId || '') === String(documentId)) {
         if (window.location.hash) scrollToSection(window.location.hash.slice(1), { updateUrl: false });
-        else window.scrollTo({ top: 0, behavior: 'smooth' });
+        // No hash means no forced scroll: preserve the browser's current reading position.
       } else loadDocument(documentId);
     } else if (params.get('library') === 'pending' && state.user) openLibrary({ focusPending: true });
-    else { applyCatalogueParams(params); resetShareMetadata(); setMode('catalogue'); renderCatalogue(); }
+    else {
+      applyCatalogueParams(params); resetShareMetadata(); setMode('catalogue'); renderCatalogue();
+      const currentUrl = `${window.location.pathname}${window.location.search}`;
+      if (state.catalogueSnapshot?.url === currentUrl) {
+        requestAnimationFrame(() => window.scrollTo({ top: state.catalogueSnapshot.scrollY, behavior: 'auto' }));
+      }
+    }
   });
 
   async function init() {

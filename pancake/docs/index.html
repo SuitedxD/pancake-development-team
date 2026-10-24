@@ -43,10 +43,10 @@
     <section class="docs-hero" data-nav-theme="light" aria-labelledby="docs-title">
       <div class="docs-hero-icon" aria-hidden="true"><img src="../../assets/pancake_team_hero_icon_01.png" alt="" /></div>
       <div class="shell docs-hero-inner">
-        <a class="kicker docs-home-kicker" href="../../pancake/" aria-label="Return to the Pancake home page">← PANCAKE KNOWLEDGE BASE</a>
+        <a class="kicker docs-home-kicker" href="../../pancake/" aria-label="Return to the Pancake home page">← PANCAKE</a>
         <div class="docs-hero-row">
           <div class="docs-hero-copy">
-            <h1 id="docs-title" class="docs-title">Documentation</h1>
+            <h1 id="docs-title" class="docs-title">Documents</h1>
             <p class="docs-lede">Official guides, answers, and knowledge shared by the Pancake community — all in one place.</p>
           </div>
           <div class="docs-account-actions" aria-label="Account actions">
@@ -84,11 +84,11 @@
             </aside>
             <div class="docs-results-column">
               <section class="docs-collection" aria-labelledby="official-docs-heading">
-                <div class="docs-collection-heading"><div><div class="kicker">MAINTAINED BY PANCAKE</div><h2 id="official-docs-heading">Pancake Official Documentation</h2><p>Core guides, features, setup, and official references.</p></div><div class="docs-collection-tools"><span class="docs-count-pill" id="official-count">0 official documents</span></div></div>
+                <div class="docs-collection-heading"><div><h2 id="official-docs-heading">Pancake Official Documentation</h2><p>Core guides, features, setup, and official references.</p></div><div class="docs-collection-tools"><span class="docs-count-pill" id="official-count">0 official documents</span></div></div>
                 <div id="official-docs-list" class="docs-list" aria-live="polite"><div class="docs-loading"><span class="docs-loader" aria-hidden="true"></span><span>Gathering official documents…</span></div></div>
               </section>
               <section class="docs-collection docs-community-collection" aria-labelledby="community-docs-heading">
-                <div class="docs-collection-heading"><div><div class="kicker">WRITTEN BY THE COMMUNITY</div><h2 id="community-docs-heading">Community Docs</h2><p>Practical walkthroughs, tips, and guides from Pancake users.</p></div><div class="docs-collection-tools"><span class="docs-count-pill" id="community-count">0</span><label class="docs-sort-wrap"><span>Sort</span><select id="community-sort" aria-label="Sort community documentation"><option value="newest">Recently added</option><option value="views">Most viewed</option><option value="helpful">Most helpful</option><option value="az">Name A–Z</option></select></label></div></div>
+                <div class="docs-collection-heading"><div><div class="kicker">WRITTEN BY THE COMMUNITY</div><h2 id="community-docs-heading">Community Documents</h2><p>Practical walkthroughs, tips, and guides from Pancake users.</p></div><div class="docs-collection-tools"><span class="docs-count-pill" id="community-count">0</span><label class="docs-sort-wrap"><span>Sort</span><select id="community-sort" aria-label="Sort community documentation"><option value="newest">Recently added</option><option value="views">Most viewed</option><option value="helpful">Most helpful</option><option value="az">Name A–Z</option></select></label></div></div>
                 <div id="community-docs-list" class="docs-list" aria-live="polite"><div class="docs-loading"><span class="docs-loader" aria-hidden="true"></span><span>Gathering community documents…</span></div></div>
               </section>
               <div id="docs-empty-state" class="docs-empty-state" hidden><span class="docs-empty-mark" aria-hidden="true">⌕</span><h3>No documents found</h3><p>Try another search, category, or topic.</p><button class="docs-small-button" type="button" data-reset-filters>Reset filters</button></div>
@@ -122,7 +122,6 @@
       <label class="docs-field" id="doc-visibility-field" hidden><span>Visibility</span><select name="visibility"><option value="public">Public — visible to everyone</option><option value="private">Private — hidden from the public catalogue</option></select><small>Visibility can be changed by an administrator when editing a published document.</small></label>
       <label class="docs-field"><span>Short summary <b>REQUIRED</b></span><textarea name="summary" rows="2" minlength="10" maxlength="500" placeholder="What will readers learn from this page?" required></textarea><small>Use at least 10 characters to explain what this document covers.</small></label>
       <label class="docs-field"><span>Cover image URL <small>(optional)</small></span><input name="coverImage" type="url" maxlength="2048" placeholder="https://example.com/document-cover.png" /><small>Paste a direct HTTPS image URL. It will appear on the document card and social share preview.</small></label>
-      <label class="docs-field" id="doc-source-field" hidden><span>Documentation collection</span><select name="source"><option value="official">Pancake Official Documentation</option><option value="community">Community Docs</option></select><small>This setting is available only when an administrator edits an existing document.</small></label>
       <label class="docs-field"><span>Document content <b>MARKDOWN</b></span><textarea name="content" rows="13" maxlength="50000" placeholder="# Heading&#10;&#10;Write your documentation in Markdown…&#10;&#10;Add an image with: ![Description](https://example.com/image.png)" required></textarea><small>Supports headings, links, bold and italic text, tables, lists, code blocks, and images with standard Markdown syntax: <code>![Alt text](https://…)</code>.</small></label>
       <div class="docs-preview-tools"><button type="button" class="docs-text-button" id="toggle-markdown-preview">Preview Markdown ↗</button></div>
       <div id="markdown-preview" class="docs-markdown docs-markdown-preview" hidden></div>

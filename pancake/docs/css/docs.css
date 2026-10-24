@@ -68,7 +68,7 @@
 .docs-hero .docs-search-icon { color: #17120a; }
 .docs-hero .docs-search-caption { color: rgba(23,18,10,.62); }
 .docs-hero .docs-search-caption span:first-child { color: rgba(23,18,10,.82); }
-.docs-home-kicker { display: inline-flex; color: rgba(11,11,12,.68) !important; text-decoration: none; }
+.docs-home-kicker { display: inline-flex; font-size: medium; color: rgba(11,11,12,.68) !important; text-decoration: none;}
 .docs-home-kicker:hover { color: #0b0b0c !important; }
 .docs-hero-icon {
   --docs-icon-size: clamp(220px, 28vw, 340px);
@@ -481,3 +481,262 @@
 .docs-card-categories, .docs-detail-categories { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
 @media (max-width: 900px) { .docs-catalog-layout { grid-template-columns: 210px minmax(0,1fr); gap: 15px; } }
 @media (max-width: 640px) { .docs-catalog-layout { grid-template-columns: minmax(0,1fr); } .docs-topic-sidebar { position: static; } }
+
+/* =========================================================
+   Responsive finishing pass — mobile, tablet, laptop, wide
+   Preserve the existing visual design while preventing
+   cramped grids, clipped controls, and horizontal overflow.
+   ========================================================= */
+.docs-root,
+.docs-root * {
+  min-width: 0;
+}
+.docs-root img,
+.docs-root video,
+.docs-root iframe,
+.docs-root canvas,
+.docs-root svg {
+  max-width: 100%;
+}
+.docs-root button,
+.docs-root input,
+.docs-root select,
+.docs-root textarea {
+  max-width: 100%;
+}
+.docs-root .docs-main-shell,
+.docs-root .docs-hero-inner,
+.docs-root .docs-results-column,
+.docs-root .docs-collection,
+.docs-root .docs-detail,
+.docs-root .docs-library,
+.docs-root .docs-admin,
+.docs-root .docs-article,
+.docs-root .docs-markdown {
+  min-width: 0;
+}
+.docs-root .docs-markdown p,
+.docs-root .docs-markdown li,
+.docs-root .docs-markdown blockquote,
+.docs-root .docs-markdown a,
+.docs-root .docs-article-summary,
+.docs-root .docs-card-summary,
+.docs-root .docs-admin-row-main,
+.docs-root .docs-page-heading p {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+.docs-root .docs-markdown table {
+  max-width: 100%;
+}
+.docs-root .docs-markdown img,
+.docs-root .docs-article-cover,
+.docs-root .docs-card-cover {
+  height: auto;
+}
+.docs-root .docs-topic-sidebar,
+.docs-root .docs-toc {
+  min-width: 0;
+}
+.docs-root .docs-dialog {
+  max-width: calc(100vw - 28px);
+  max-height: 88vh;
+  max-height: min(88dvh, 900px);
+  overscroll-behavior: contain;
+}
+.docs-root .docs-field input,
+.docs-root .docs-field select,
+.docs-root .docs-field textarea {
+  min-width: 0;
+}
+.docs-root .docs-action-button,
+.docs-root .docs-small-button,
+.docs-root .docs-back-button,
+.docs-root .docs-dialog-close {
+  touch-action: manipulation;
+}
+
+@media (min-width: 1600px) {
+  .docs-root .docs-hero-inner,
+  .docs-root .docs-main-shell {
+    width: min(1440px, calc(100% - 96px));
+  }
+  .docs-root .docs-main-shell { padding-top: 52px; }
+  .docs-root .docs-catalog-layout { grid-template-columns: 260px minmax(0, 1fr); gap: 32px; }
+  .docs-root #official-docs-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .docs-root #community-docs-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .docs-root .docs-reading-layout { grid-template-columns: minmax(0, 1fr) 240px; gap: 46px; }
+  .docs-root .docs-markdown { font-size: 15px; }
+}
+
+@media (max-width: 1200px) {
+  .docs-root .docs-hero { padding-top: 120px; }
+  .docs-root .docs-hero-row { gap: 24px; }
+  .docs-root .docs-catalog-layout { grid-template-columns: 205px minmax(0, 1fr); gap: 18px; }
+  .docs-root .docs-topic-sidebar { padding: 14px 12px; }
+  .docs-root #community-docs-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .docs-root .docs-reading-layout { grid-template-columns: minmax(0, 1fr) 175px; gap: 22px; }
+}
+
+@media (max-width: 900px) {
+  .docs-root .docs-hero { padding-top: 112px; }
+  .docs-root .docs-hero-row { align-items: flex-start; flex-direction: column; gap: 18px; }
+  .docs-root .docs-account-actions { width: 100%; justify-content: flex-start; align-self: stretch; }
+  .docs-root .docs-account-actions #login-button { min-width: 0; }
+  .docs-root .docs-catalog-layout { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .docs-root .docs-topic-sidebar { position: static; }
+  .docs-root .docs-topic-filters { display: flex; flex-wrap: wrap; gap: 7px; }
+  .docs-root .docs-reading-layout { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .docs-root .docs-toc { position: static; order: -1; }
+  .docs-root .docs-toc-links { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .docs-root .docs-article-actions { align-items: stretch; }
+  .docs-root .docs-detail-metrics { margin-left: 0; }
+}
+
+@media (max-width: 700px) {
+  .docs-root .docs-hero { padding: 100px 0 25px; }
+  .docs-root .docs-hero-icon { --docs-icon-size: clamp(145px, 40vw, 190px); right: -12px; bottom: -28px; opacity: .11; }
+  .docs-root .docs-hero-row { gap: 17px; }
+  .docs-root .docs-title { font-size: clamp(38px, 11vw, 56px); line-height: 1; letter-spacing: -.065em; }
+  .docs-root .docs-lede { max-width: 620px; margin-top: 13px; font-size: clamp(14px, 3.5vw, 16px); line-height: 1.65; }
+  .docs-root .docs-account-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .docs-root .docs-account-actions > button { width: 100%; min-height: 42px; padding-inline: 9px; white-space: normal; text-align: center; }
+  .docs-root .docs-account-actions #login-button { grid-column: 1 / -1; }
+  .docs-root .docs-search-panel { min-height: 51px; margin-top: 20px; padding: 0 11px; }
+  .docs-root .docs-search-panel input { font-size: 16px; }
+  .docs-root .docs-search-caption { gap: 4px; font-size: 10px; }
+  .docs-root .docs-main-shell { padding-top: 28px; padding-bottom: 42px; }
+  .docs-root .docs-section-heading { align-items: flex-start; gap: 12px; margin-bottom: 19px; }
+  .docs-root .docs-section-heading h2 { font-size: clamp(27px, 7.5vw, 35px); }
+  .docs-root .docs-section-heading p { font-size: 12px; }
+  .docs-root .docs-section-heading > button { flex: 0 0 auto; }
+  .docs-root .docs-topic-sidebar { padding: 12px; border-radius: 13px; }
+  .docs-root .docs-topic-filters { gap: 6px; }
+  .docs-root .docs-topic-button { max-width: 100%; min-height: 36px; padding: 4px 10px; font-size: 11px; }
+  .docs-root .docs-topic-button span { display: none; }
+  .docs-root .docs-sidebar-note { margin-top: 15px; padding: 12px 4px 2px; }
+  .docs-root .docs-sidebar-note p { margin-top: 6px; }
+  .docs-root .docs-collection + .docs-collection { margin-top: 28px; }
+  .docs-root .docs-collection-heading { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .docs-root .docs-collection-heading h2 { font-size: clamp(22px, 6.3vw, 28px); line-height: 1.12; overflow-wrap: anywhere; }
+  .docs-root .docs-collection-heading p { max-width: 100%; }
+  .docs-root .docs-collection-tools { width: 100%; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+  .docs-root .docs-sort-wrap { min-width: 0; flex: 1 1 175px; justify-content: flex-end; }
+  .docs-root .docs-sort-wrap select { width: min(100%, 190px); max-width: 100%; min-height: 38px; font-size: 11px; }
+  .docs-root #official-docs-list,
+  .docs-root #community-docs-list { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .docs-root #official-docs-list .docs-card,
+  .docs-root #community-docs-list .docs-card { padding: 14px; border-radius: 12px; }
+  .docs-root .docs-card h3 { font-size: 17px; line-height: 1.3; }
+  .docs-root .docs-card-summary { font-size: 12px; line-height: 1.65; }
+  .docs-root .docs-card-footer { gap: 8px 10px; }
+  .docs-root .docs-detail-top { align-items: flex-start; gap: 12px; margin-bottom: 19px; }
+  .docs-root .docs-back-button { min-height: 40px; }
+  .docs-root .docs-article-title { margin-top: 12px; font-size: clamp(30px, 9vw, 43px); line-height: 1.05; }
+  .docs-root .docs-article-summary { font-size: 14px; line-height: 1.7; }
+  .docs-root .docs-article-meta { gap: 7px 10px; font-size: 10px; }
+  .docs-root .docs-article-actions { gap: 7px; }
+  .docs-root .docs-action-button { min-height: 40px; padding: 0 10px; }
+  .docs-root .docs-detail-metrics { width: 100%; gap: 7px 12px; padding-top: 5px; }
+  .docs-root .docs-markdown { margin-top: 24px; font-size: 14px; line-height: 1.8; scroll-margin-top: 78px; }
+  .docs-root .docs-markdown h1 { font-size: clamp(25px, 7vw, 30px); }
+  .docs-root .docs-markdown h2 { font-size: clamp(21px, 6vw, 25px); }
+  .docs-root .docs-markdown h3 { font-size: clamp(18px, 5vw, 21px); }
+  .docs-root .docs-markdown pre { max-width: 100%; }
+  .docs-root .docs-markdown table { font-size: 11px; }
+  .docs-root .docs-markdown th,
+  .docs-root .docs-markdown td { min-width: 76px; padding: 8px; }
+  .docs-root .docs-useful-panel { align-items: stretch; padding: 15px; gap: 12px; }
+  .docs-root .docs-useful-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+  .docs-root .docs-useful-actions .docs-action-button { width: 100%; }
+  .docs-root .docs-library-grid { grid-template-columns: minmax(0, 1fr); }
+  .docs-root .docs-page-heading h2 { font-size: clamp(29px, 8vw, 42px); overflow-wrap: anywhere; }
+  .docs-root .docs-library-title-line { align-items: flex-start; }
+  .docs-root .docs-admin-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .docs-root .docs-admin-stat:last-child { grid-column: 1 / -1; }
+  .docs-root .docs-admin-stat { padding: 12px; }
+  .docs-root .docs-admin-stat strong { font-size: clamp(20px, 6vw, 25px); }
+  .docs-root .docs-admin-section { padding: 13px; }
+  .docs-root .docs-admin-row { grid-template-columns: minmax(0, 1fr); padding: 11px; }
+  .docs-root .docs-admin-row-actions { justify-content: flex-start; }
+  .docs-root .docs-admin-row-actions .docs-small-button { min-height: 36px; padding-inline: 10px; font-size: 10px; }
+  .docs-root .docs-form-row { grid-template-columns: minmax(0, 1fr); }
+  .docs-root .docs-choice-field { padding: 10px; }
+  .docs-root .docs-choice-grid { gap: 6px; }
+  .docs-root .docs-choice-chip span { min-height: 36px; padding: 0 9px; font-size: 10px; }
+  .docs-root .docs-dialog { width: calc(100% - 20px); max-width: calc(100% - 20px); max-height: 90vh; max-height: min(90dvh, 900px); padding: 16px; border-radius: 15px; }
+  .docs-root .docs-dialog-heading h2 { font-size: clamp(22px, 6.5vw, 29px); }
+  .docs-root .docs-dialog-copy { font-size: 12px; }
+  .docs-root .docs-field input,
+  .docs-root .docs-field select,
+  .docs-root .docs-field textarea { padding: 11px; font-size: 16px; }
+  .docs-root .docs-dialog-actions { align-items: stretch; flex-direction: column-reverse; }
+  .docs-root .docs-dialog-actions > button,
+  .docs-root .docs-dialog-actions > .btn { width: 100%; min-height: 42px; }
+  .docs-root .docs-toast { top: auto; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); left: 12px; width: auto; max-width: none; font-size: 12px; }
+}
+
+@media (max-width: 420px) {
+  .docs-root .docs-shell { width: calc(100% - 24px); }
+  .docs-root .docs-hero { padding-top: 92px; }
+  .docs-root .docs-title { font-size: clamp(35px, 10.8vw, 45px); }
+  .docs-root .docs-hero-icon { --docs-icon-size: 142px; right: -27px; bottom: -31px; }
+  .docs-root .docs-account-actions { grid-template-columns: minmax(0, 1fr); }
+  .docs-root .docs-account-actions #login-button { grid-column: auto; }
+  .docs-root .docs-section-heading { flex-direction: column; }
+  .docs-root .docs-section-heading > button { align-self: flex-start; }
+  .docs-root .docs-topic-button { font-size: 10px; padding-inline: 8px; }
+  .docs-root .docs-toc-links { grid-template-columns: minmax(0, 1fr); }
+  .docs-root .docs-article-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .docs-root .docs-article-actions > .docs-action-button { width: 100%; }
+  .docs-root .docs-detail-metrics { grid-column: 1 / -1; }
+  .docs-root .docs-article-title { font-size: clamp(29px, 9vw, 36px); }
+  .docs-root .docs-markdown { font-size: 13px; }
+  .docs-root .docs-markdown h1 { font-size: 24px; }
+  .docs-root .docs-markdown h2 { font-size: 20px; }
+  .docs-root .docs-markdown h3 { font-size: 17px; }
+  .docs-root .docs-useful-actions { grid-template-columns: minmax(0, 1fr); }
+  .docs-root .docs-library-title-line { flex-direction: column; }
+  .docs-root .docs-admin-summary { gap: 7px; }
+  .docs-root .docs-admin-stat span { letter-spacing: .06em; }
+}
+
+@media (max-width: 350px) {
+  .docs-root .docs-shell { width: calc(100% - 20px); }
+  .docs-root .docs-main-shell { padding-top: 22px; }
+  .docs-root .docs-hero { padding: 86px 0 22px; }
+  .docs-root .docs-title { font-size: 34px; }
+  .docs-root .docs-account-actions > button { font-size: 10px; }
+  .docs-root .docs-search-panel { padding-inline: 8px; }
+  .docs-root .docs-search-icon { font-size: 23px; }
+  .docs-root .docs-topic-sidebar { padding: 9px; }
+  .docs-root .docs-card { padding: 12px; }
+  .docs-root .docs-detail-top { flex-direction: column; }
+  .docs-root .docs-article-actions { grid-template-columns: minmax(0, 1fr); }
+  .docs-root .docs-admin-summary { grid-template-columns: minmax(0, 1fr); }
+  .docs-root .docs-admin-stat:last-child { grid-column: auto; }
+  .docs-root .docs-dialog { width: calc(100% - 12px); max-width: calc(100% - 12px); padding: 13px; }
+}
+
+/* Compact-height landscape screens: avoid wasting the visible viewport on the hero. */
+@media (max-height: 520px) and (orientation: landscape) {
+  .docs-root .docs-hero { padding-top: 82px; padding-bottom: 22px; }
+  .docs-root .docs-hero-icon { opacity: .08; }
+  .docs-root .docs-title { font-size: clamp(34px, 6vw, 49px); }
+  .docs-root .docs-search-panel { margin-top: 16px; }
+  .docs-root .docs-dialog { max-height: 94vh; max-height: 94dvh; }
+}
+
+/* Larger touch targets on touch-only devices without changing desktop density. */
+@media (hover: none) and (pointer: coarse) {
+  .docs-root .docs-topic-button,
+  .docs-root .docs-category-chip,
+  .docs-root .docs-action-button,
+  .docs-root .docs-small-button,
+  .docs-root .docs-back-button { min-height: 40px; }
+  .docs-root .docs-card:hover { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .docs-root *, .docs-root *::before, .docs-root *::after { scroll-behavior: auto !important; }
+}
