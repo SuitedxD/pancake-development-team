@@ -28,7 +28,7 @@
 
   const state = {
     accessToken: readAccessToken(), viewerId: getViewerId(), user: null, canAccessAdmin: false,
-    adminUnlocked: false, currentMode: 'catalogue', allDocuments: [],
+    adminUnlocked: false, adminRole: 'admin', currentMode: 'catalogue', allDocuments: [],
     selectedTopic: '', selectedCategory: '', query: '',
     sort: { community: 'newest' },
     editorTopic: '', editorCategories: [],
@@ -611,6 +611,11 @@
 
   function openDocForm(mode, documentItem = null) {
     if (!state.user && mode !== 'admin-create' && mode !== 'admin-edit') { login(); return; }
+    const isModerator = state.adminRole === 'moderator';
+    if (isModerator && mode === 'admin-create') { notify('Moderators cannot create official documents directly.', 'error'); return; }
+    if (isModerator && mode === 'admin-edit' && String(documentItem?.authorId || '') !== String(state.user?.discordId || '')) {
+      notify('Moderators can only edit documents they authored.', 'error'); return;
+    }
     state.editorMode = mode; state.editorDocumentId = documentItem?.documentId || '';
     state.editorOrder = Number(documentItem?.order) || 0; state.previewVisible = false;
     const form = $('#doc-form'); form.reset(); $('#doc-form-error').hidden = true; $('#markdown-preview').hidden = true;
@@ -621,21 +626,19 @@
     form.elements.content.value = documentItem?.content || '';
     renderEditorChoices(documentItem);
     const sourceField = $('#doc-source-field');
-    // Normal submissions never expose a collection selector. New admin documents
-    // are always Official; only editing an existing document can move collections.
-    if (sourceField) sourceField.hidden = mode !== 'admin-edit';
+    // Moderators cannot move documents between collections; admins retain the existing option.
+    if (sourceField) sourceField.hidden = mode !== 'admin-edit' || isModerator;
     if (form.elements.source) form.elements.source.value = documentItem ? getSource(documentItem) : 'official';
     const visibilityField = $('#doc-visibility-field');
-    // Visibility is available for owner edit requests and all admin create/edit flows,
-    // but not for a brand-new community submission.
-    if (visibilityField) visibilityField.hidden = mode === 'submission';
+    if (visibilityField) visibilityField.hidden = !['edit', 'admin-create', 'admin-edit'].includes(mode);
+    // The visibility picker is shown for reviewed author edits and admin create/edit, never for a new submission.
     if (form.elements.visibility) form.elements.visibility.value = documentItem?.visibility === 'private' ? 'private' : 'public';
     const title = mode === 'edit' ? 'Suggest edits' : mode === 'admin-create' ? 'Create a document' : mode === 'admin-edit' ? 'Edit document' : 'Submit documentation';
     const kicker = mode.startsWith('admin-') ? 'DOCUMENTATION ADMINISTRATION' : 'CONTRIBUTE TO THE KNOWLEDGE BASE';
     const copy = mode === 'edit'
-      ? 'Suggest corrections, improvements, or a visibility change to this published Community Doc. All changes are reviewed before the public version is updated.'
+      ? 'Suggest corrections or improvements to a Community Doc. Your changes will be reviewed before the public version is updated.'
       : mode === 'admin-create'
-        ? 'New documents created here are published in Pancake Official Documentation. Choose whether the document is public or private; administrators can arrange official document order with the order controls.'
+        ? 'New documents created here are always published in Pancake Official Documentation. Official documents appear in the same order visitors see; administrators can arrange them with the order controls.'
         : mode === 'admin-edit'
           ? 'Update this published document, choose its visibility, or move it between official and community collections.'
           : 'Share a useful guide with the Pancake community. New submissions always enter the Community Docs review queue.';
@@ -680,7 +683,7 @@
     if (mode === 'submission' || mode === 'edit') fields.source = 'community';
     else if (mode === 'admin-create') fields.source = 'official';
     else if (mode === 'admin-edit') fields.source = form.elements.source?.value || getSource(state.adminData.documents.find((item) => item.documentId === state.editorDocumentId) || {});
-    if (mode !== 'submission') fields.visibility = form.elements.visibility?.value || 'public';
+    if (['edit', 'admin-create', 'admin-edit'].includes(mode)) fields.visibility = form.elements.visibility?.value || 'public';
     try {
       let response;
       if (mode === 'submission' || mode === 'edit') {
@@ -773,9 +776,9 @@
       const pending = profilePendingList(data);
       $('#library-view').innerHTML = `
         <header class="docs-page-heading docs-library-heading"><div><div class="kicker">YOUR PANCAKE LIBRARY</div><h2 id="library-heading">My Library</h2><p>Keep your saved references, published guides, and submissions in one place.</p></div><button class="docs-back-button" type="button" data-go-catalogue>← Back to all docs</button></header>
-        <section class="docs-library-section"><div class="docs-library-section-heading"><div><h3>Saved favorites: <span class="docs-count-pill">${formatNumber(favorites.length)}</span></h3><p>Documents you bookmarked for later.</p></div><button class="docs-text-button" type="button" data-go-catalogue>Browse docs ↗</button></div><div class="docs-library-grid">${favorites.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">You have not saved any documents yet.</div>'}</div></section>
-        <section class="docs-library-section"><div class="docs-library-section-heading"><div><h3>Published by you: <span class="docs-count-pill">${formatNumber(authored.length)}</span></h3><p>Your documentation that has been approved and published.</p></div></div><div class="docs-library-grid">${authored.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">You have not published any documents yet.</div>'}</div></section>
-        <section class="docs-library-section" id="docs-pending-library"><div class="docs-library-section-heading"><div><h3>Pending for approval: <span class="docs-count-pill">${formatNumber(pending.length)}</span></h3><p>Submissions and edits waiting for the documentation team to review.</p></div></div><div class="docs-library-grid docs-pending-grid">${pending.map(pendingSubmissionCard).join('') || '<div class="docs-inline-empty">You have no documents waiting for approval.</div>'}</div></section>`;
+        <section class="docs-library-section"><div class="docs-library-section-heading"><div><h3>Saved favorites <span class="docs-count-pill">${formatNumber(favorites.length)}</span></h3><p>Documents you bookmarked for later.</p></div><button class="docs-text-button" type="button" data-go-catalogue>Browse docs ↗</button></div><div class="docs-library-grid">${favorites.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">You have not saved any documents yet.</div>'}</div></section>
+        <section class="docs-library-section"><div class="docs-library-section-heading"><div><h3>Published by you <span class="docs-count-pill">${formatNumber(authored.length)}</span></h3><p>Your documentation that has been approved and published.</p></div></div><div class="docs-library-grid">${authored.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">You have not published any documents yet.</div>'}</div></section>
+        <section class="docs-library-section" id="docs-pending-library"><div class="docs-library-section-heading"><div><h3>Pending for approval <span class="docs-count-pill">${formatNumber(pending.length)}</span></h3><p>Submissions and edits waiting for the documentation team to review.</p></div></div><div class="docs-library-grid docs-pending-grid">${pending.map(pendingSubmissionCard).join('') || '<div class="docs-inline-empty">You have no documents waiting for approval.</div>'}</div></section>`;
       // Switching to the library is not a reason to jump the page; keep the current viewport.
       requestAnimationFrame(() => window.scrollTo({ top: requestedScrollY, behavior: 'auto' }));
     } catch (error) {
@@ -785,6 +788,9 @@
 
   function renderAdmin() {
     const data = state.adminData || { documents: [], requests: [] };
+    const isModerator = state.adminRole === 'moderator';
+    const currentUserId = String(state.user?.discordId || '');
+    const ownsDocument = (item) => Boolean(currentUserId && String(item?.authorId || '') === currentUserId);
     const documents = [...(data.documents || [])];
     const officialDocuments = documents.filter((item) => getSource(item) === 'official').sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0) || String(a.title).localeCompare(String(b.title)));
     const communityDocuments = documents.filter((item) => getSource(item) !== 'official').sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
@@ -794,22 +800,38 @@
     const requestRows = requests.map((request) => {
       const fields = request.fields || {};
       const typeLabel = request.requestType === 'edit' ? 'EDIT REQUEST' : 'NEW SUBMISSION';
-      return `<article class="docs-admin-row docs-request-row"><div class="docs-admin-row-main"><strong>${escapeHtml(fields.title || 'Untitled submission')}</strong><p>${escapeHtml(fields.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${typeLabel}</span><span>By ${escapeHtml(request.authorDisplayName || 'Unknown')}</span><span>Submitted ${escapeHtml(formatDate(request.createdAt))}</span>${fields.topic ? `<span>${escapeHtml(fields.topic)}</span>` : ''}${request.requestType === 'edit' && fields.visibility ? `<span>Requested visibility: ${fields.visibility === 'private' ? 'Private' : 'Public'}</span>` : ''}<span>Community</span></div></div><div class="docs-admin-row-actions"><button class="docs-small-button" type="button" data-action="toggle-request-preview">Preview</button><button class="docs-small-button" type="button" data-action="approve-request" data-request-id="${escapeHtml(request.requestId)}">Approve</button><button class="docs-small-button" type="button" data-action="reject-request" data-request-id="${escapeHtml(request.requestId)}">Reject</button></div><div class="docs-request-preview" hidden><div class="docs-admin-row-meta">${(fields.categories || []).map((category) => `<span>${escapeHtml(category)}</span>`).join('')}</div>${renderMarkdown(fields.content || '', 'docs-request-markdown')}</div></article>`;
+      return `<article class="docs-admin-row docs-request-row"><div class="docs-admin-row-main"><strong>${escapeHtml(fields.title || 'Untitled submission')}</strong><p>${escapeHtml(fields.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${typeLabel}</span><span>By ${escapeHtml(request.authorDisplayName || 'Unknown')}</span><span>Submitted ${escapeHtml(formatDate(request.createdAt))}</span>${fields.topic ? `<span>${escapeHtml(fields.topic)}</span>` : ''}<span>Community</span></div></div><div class="docs-admin-row-actions"><button class="docs-small-button" type="button" data-action="toggle-request-preview">Preview</button><button class="docs-small-button" type="button" data-action="approve-request" data-request-id="${escapeHtml(request.requestId)}">Approve</button><button class="docs-small-button" type="button" data-action="reject-request" data-request-id="${escapeHtml(request.requestId)}">Reject</button></div><div class="docs-request-preview" hidden><div class="docs-admin-row-meta">${(fields.categories || []).map((category) => `<span>${escapeHtml(category)}</span>`).join('')}</div>${renderMarkdown(fields.content || '', 'docs-request-markdown')}</div></article>`;
     }).join('');
-    const officialRows = officialDocuments.map((item, index) => `<article class="docs-admin-row"><div class="docs-admin-row-main"><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${escapeHtml(getTopic(item))}</span><span>Official</span><span>Visibility: ${item.visibility === 'private' ? 'Private' : 'Public'}</span><span>Updated ${escapeHtml(formatDate(item.updatedAt || item.createdAt))}</span><span>Official order ${index + 1}</span></div></div><div class="docs-admin-row-actions"><div class="docs-order-buttons"><button type="button" data-action="move-doc" data-document-id="${escapeHtml(item.documentId)}" data-delta="-1" aria-label="Move up" ${index === 0 ? 'disabled' : ''}>↑</button><button type="button" data-action="move-doc" data-document-id="${escapeHtml(item.documentId)}" data-delta="1" aria-label="Move down" ${index === officialDocuments.length - 1 ? 'disabled' : ''}>↓</button></div><button type="button" class="docs-small-button" data-action="edit-admin-document" data-document-id="${escapeHtml(item.documentId)}">Edit</button><button type="button" class="docs-small-button" data-action="delete-admin-document" data-document-id="${escapeHtml(item.documentId)}">Delete</button></div></article>`).join('');
-    const communityRows = communityDocuments.map((item) => `<article class="docs-admin-row"><div class="docs-admin-row-main"><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${escapeHtml(getTopic(item))}</span><span>Community</span><span>Visibility: ${item.visibility === 'private' ? 'Private' : 'Public'}</span><span>Updated ${escapeHtml(formatDate(item.updatedAt || item.createdAt))}</span><span>${formatNumber(getViews(item))} views</span></div></div><div class="docs-admin-row-actions"><button type="button" class="docs-small-button" data-action="edit-admin-document" data-document-id="${escapeHtml(item.documentId)}">Edit</button><button type="button" class="docs-small-button" data-action="delete-admin-document" data-document-id="${escapeHtml(item.documentId)}">Delete</button></div></article>`).join('');
+    const officialRows = officialDocuments.map((item, index) => {
+      const controls = isModerator ? '' : `<div class="docs-order-buttons"><button type="button" data-action="move-doc" data-document-id="${escapeHtml(item.documentId)}" data-delta="-1" aria-label="Move up" ${index === 0 ? 'disabled' : ''}>↑</button><button type="button" data-action="move-doc" data-document-id="${escapeHtml(item.documentId)}" data-delta="1" aria-label="Move down" ${index === officialDocuments.length - 1 ? 'disabled' : ''}>↓</button></div>`;
+      const edit = (!isModerator || ownsDocument(item)) ? `<button type="button" class="docs-small-button" data-action="edit-admin-document" data-document-id="${escapeHtml(item.documentId)}">Edit</button>` : '';
+      const remove = !isModerator ? `<button type="button" class="docs-small-button" data-action="delete-admin-document" data-document-id="${escapeHtml(item.documentId)}">Delete</button>` : '';
+      return `<article class="docs-admin-row"><div class="docs-admin-row-main"><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${escapeHtml(getTopic(item))}</span><span>Official</span><span>Visibility: ${item.visibility === 'private' ? 'Private' : 'Public'}</span><span>Updated ${escapeHtml(formatDate(item.updatedAt || item.createdAt))}</span>${!isModerator ? `<span>Official order ${index + 1}</span>` : ''}</div></div><div class="docs-admin-row-actions">${controls}${edit}${remove}</div></article>`;
+    }).join('');
+    const communityRows = communityDocuments.map((item) => {
+      const edit = (!isModerator || ownsDocument(item)) ? `<button type="button" class="docs-small-button" data-action="edit-admin-document" data-document-id="${escapeHtml(item.documentId)}">Edit</button>` : '';
+      const remove = !isModerator ? `<button type="button" class="docs-small-button" data-action="delete-admin-document" data-document-id="${escapeHtml(item.documentId)}">Delete</button>` : '';
+      return `<article class="docs-admin-row"><div class="docs-admin-row-main"><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${escapeHtml(getTopic(item))}</span><span>Community</span><span>Visibility: ${item.visibility === 'private' ? 'Private' : 'Public'}</span><span>Updated ${escapeHtml(formatDate(item.updatedAt || item.createdAt))}</span><span>${formatNumber(getViews(item))} views</span></div></div><div class="docs-admin-row-actions">${edit}${remove}</div></article>`;
+    }).join('');
+    const newDocumentButton = !isModerator ? '<button class="docs-small-button docs-primary-small" type="button" data-action="new-admin-document">＋ New document</button>' : '';
+    const roleHeading = isModerator ? 'Documents moderator' : 'Documents admin';
+    const description = isModerator
+      ? 'Review community submissions and suggested edits. You can edit only documents authored by your Discord account.'
+      : 'Review community submissions, manage official references, and control published visibility.';
     $('#admin-view').innerHTML = `
-      <header class="docs-page-heading"><div><div class="kicker">EDITORIAL WORKSPACE</div><h2 id="admin-heading">Documents admin</h2><p>Review community submissions, manage official references, and control published visibility.</p></div><div class="docs-heading-actions"><button class="docs-back-button" type="button" data-go-catalogue>← Back to all docs</button><button class="docs-small-button docs-primary-small" type="button" data-action="new-admin-document">＋ New document</button></div></header>
+      <header class="docs-page-heading"><div><div class="kicker">EDITORIAL WORKSPACE</div><h2 id="admin-heading">${roleHeading}</h2><p>${description}</p></div><div class="docs-heading-actions"><button class="docs-back-button" type="button" data-go-catalogue>← Back to all docs</button>${newDocumentButton}</div></header>
       <div class="docs-admin-summary"><div class="docs-admin-stat"><span>Published documents</span><strong>${formatNumber(documents.length)}</strong></div><div class="docs-admin-stat"><span>Waiting for review</span><strong>${formatNumber(requests.length)}</strong></div><div class="docs-admin-stat"><span>Topics / categories</span><strong>${formatNumber(topics.size)} / ${formatNumber(categoriesUsed.size)}</strong></div></div>
       <section class="docs-admin-section docs-admin-review"><div class="docs-admin-section-header"><div><h3>Community submissions &amp; suggested edits</h3><p>New submissions are always reviewed as Community Docs; official documents are published by administrators.</p></div></div><div class="docs-admin-rows">${requestRows || '<div class="docs-inline-empty">The review queue is clear. No submissions are waiting.</div>'}</div></section>
-      <section class="docs-admin-section"><div class="docs-admin-section-header"><div><h3>Pancake Official Documentation <span class="docs-count-pill">${officialDocuments.length}</span></h3><p>These documents keep a fixed public order. Use the arrows to arrange them; Community Docs can be sorted separately.</p></div><button class="docs-small-button" type="button" data-action="refresh-admin">Refresh</button></div><div class="docs-admin-rows">${officialRows || '<div class="docs-inline-empty">No official documents published yet.</div>'}</div></section>
+      <section class="docs-admin-section"><div class="docs-admin-section-header"><div><h3>Pancake Official Documentation <span class="docs-count-pill">${officialDocuments.length}</span></h3><p>${isModerator ? 'Only your own documents can be edited; official order and deletion are restricted.' : 'These documents keep a fixed public order. Use the arrows to arrange them; Community Docs can be sorted separately.'}</p></div>${!isModerator ? '<button class="docs-small-button" type="button" data-action="refresh-admin">Refresh</button>' : ''}</div><div class="docs-admin-rows">${officialRows || '<div class="docs-inline-empty">No official documents published yet.</div>'}</div></section>
       <section class="docs-admin-section"><div class="docs-admin-section-header"><div><h3>Community Docs <span class="docs-count-pill">${communityDocuments.length}</span></h3><p>These documents are shown in the public gallery and can be sorted by visitors.</p></div></div><div class="docs-admin-rows">${communityRows || '<div class="docs-inline-empty">No community documents published yet.</div>'}</div></section>
-      <p class="docs-admin-status" id="docs-admin-status">Administrator changes use the same Discord authorization and additional admin verification as Plugin Portal.</p>`;
+      <p class="docs-admin-status" id="docs-admin-status">${isModerator ? 'Moderator actions are limited by the server to review requests and edit your own documents.' : 'Administrator changes use the same Discord authorization and additional admin verification as Plugin Portal.'}</p>`;
   }
 
   async function loadAdminDashboard(enterMode = true) {
     try {
-      state.adminData = await api('/api/docs/admin/dashboard'); state.adminUnlocked = true;
+      state.adminData = await api('/api/docs/admin/dashboard');
+      state.adminRole = state.adminData.adminRole === 'moderator' ? 'moderator' : 'admin';
+      state.adminUnlocked = true;
       if (enterMode) setMode('admin'); renderAdmin(); return true;
     } catch (error) {
       if (enterMode) setMode('catalogue'); notify(error.message || 'Could not open Documents administration.', 'error'); return false;
@@ -827,7 +849,8 @@
     try {
       state.adminUnlocked = false;
       const data = await api('/api/docs/admin/access', { method: 'POST', body: { adminAuth: { username: form.elements.username.value.trim(), password: form.elements.password.value } } });
-      state.adminData = { documents: data.documents || [], requests: data.requests || [] }; state.adminUnlocked = true;
+      state.adminRole = data.adminRole === 'moderator' ? 'moderator' : 'admin';
+      state.adminData = { documents: data.documents || [], requests: data.requests || [], adminRole: state.adminRole }; state.adminUnlocked = true;
       closeDialog('admin-auth-dialog'); setMode('admin'); renderAdmin(); notify('Documents administration unlocked.');
     } catch (error) { errorBox.textContent = error.message || 'Admin verification failed.'; errorBox.hidden = false; }
     finally { submit.disabled = false; submit.textContent = oldText; }
@@ -903,7 +926,7 @@
     if (target.closest('#admin-button')) { await openAdminPanel(); return; }
     if (target.closest('#logout-button')) {
       try { if (state.accessToken) await api('/api/auth/logout', { method: 'POST', body: {} }); } catch { /* Clear local sign-in even if logout endpoint is unavailable. */ }
-      state.accessToken = ''; state.user = null; state.canAccessAdmin = false; state.adminUnlocked = false; saveAccessToken(''); updateAccountButtons();
+      state.accessToken = ''; state.user = null; state.canAccessAdmin = false; state.adminUnlocked = false; state.adminRole = 'admin'; saveAccessToken(''); updateAccountButtons();
       navigateCatalogue(); await loadCatalogue(); notify('You have been signed out.'); return;
     }
     if (target.closest('#clear-search-button')) {
@@ -940,7 +963,7 @@
       return;
     }
     if (action === 'edit-document') { if (state.selectedDocument?.documentId === documentId) requireLoginThen(() => openDocForm('edit', state.selectedDocument)); return; }
-    if (action === 'new-admin-document') { openDocForm('admin-create'); return; }
+    if (action === 'new-admin-document') { if (state.adminRole === 'moderator') { notify('Moderators cannot create official documents directly.', 'error'); return; } openDocForm('admin-create'); return; }
     if (action === 'edit-admin-document') { const item = (state.adminData.documents || []).find((candidate) => candidate.documentId === documentId); if (item) openDocForm('admin-edit', item); return; }
     if (action === 'delete-admin-document') { await deleteAdminDocument(documentId); return; }
     if (action === 'move-doc') { await reorderDocuments(documentId, Number(actionButton.dataset.delta) || 0); return; }
