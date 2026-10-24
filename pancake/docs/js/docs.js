@@ -355,7 +355,7 @@
           <p class="docs-card-summary">${escapeHtml(item.summary || 'Open this document to read the full guide.')}</p>
           ${categoryChips ? `<div class="docs-card-categories" aria-label="Categories">${categoryChips}</div>` : ''}
           ${metrics}
-          <div class="docs-card-footer"><span>By: <strong>${escapeHtml(getAuthorDisplayName(item))}</strong></span><span>${pending ? 'Submitted' : 'Updated:'} <strong>${escapeHtml(updatedDate)}</strong></span>${pending ? '<span class="docs-status-pill">Pending for approval</span>' : ''}</div>
+          <div class="docs-card-footer"><span>By <strong>${escapeHtml(getAuthorDisplayName(item))}</strong></span><span>${pending ? 'Submitted' : 'Updated'} <strong>${escapeHtml(updatedDate)}</strong></span>${pending ? '<span class="docs-status-pill">Pending for approval</span>' : ''}</div>
         </div>
         <span class="docs-card-arrow" aria-hidden="true">${pending ? '◷' : '↗'}</span>
       </article>`;
@@ -478,15 +478,6 @@
     return true;
   }
 
-  function scrollToDocumentTitle() {
-    const title = $('.docs-article-title', $('#detail-view'));
-    if (!title) return false;
-    // Use an immediate, deterministic scroll when a document is first opened.
-    // The title's scroll-margin-top keeps it clear of the site navigation.
-    title.scrollIntoView({ behavior: 'auto', block: 'start' });
-    return true;
-  }
-
   function renderDetail(documentItem, feedback, pendingChange = null, options = {}) {
     const restoreScrollY = Number.isFinite(options.scrollY) ? options.scrollY : window.scrollY;
     if (!documentItem || typeof documentItem !== 'object') {
@@ -514,7 +505,7 @@
             ${safeHttpsUrl(documentItem.coverImage || '') ? `<img class="docs-article-cover" src="${escapeHtml(safeHttpsUrl(documentItem.coverImage))}" alt="${escapeHtml(documentItem.title)} cover" loading="eager" decoding="async" referrerpolicy="no-referrer" />` : ''}
             <h1 class="docs-article-title">${escapeHtml(documentItem.title)}</h1>
             ${documentItem.summary ? `<p class="docs-article-summary">${escapeHtml(documentItem.summary)}</p>` : ''}
-            <div class="docs-article-meta"><span>By: <strong>${escapeHtml(getAuthorDisplayName(documentItem))}</strong></span><span aria-hidden="true">·</span><span>Published: <strong>${escapeHtml(formatDate(documentItem.createdAt))}</strong></span><span aria-hidden="true">·</span><span>Last updated: <strong>${escapeHtml(formatDate(documentItem.updatedAt || documentItem.createdAt))}</strong></span></div>
+            <div class="docs-article-meta"><span>By <strong>${escapeHtml(getAuthorDisplayName(documentItem))}</strong></span><span aria-hidden="true">·</span><span>Published <strong>${escapeHtml(formatDate(documentItem.createdAt))}</strong></span><span aria-hidden="true">·</span><span>Last updated <strong>${escapeHtml(formatDate(documentItem.updatedAt || documentItem.createdAt))}</strong></span></div>
             ${detailCategories ? `<div class="docs-detail-categories" aria-label="Categories">${detailCategories}</div>` : ''}
             <div class="docs-article-actions">
               <button type="button" class="docs-action-button${documentItem.favorite ? ' is-active' : ''}" data-action="favorite-document" data-document-id="${escapeHtml(documentItem.documentId)}">☆ <span>${escapeHtml(favoriteLabel)}</span></button>
@@ -537,15 +528,8 @@
     const hash = window.location.hash;
     if (options.scrollToHash !== false && hash && !hash.startsWith('#auth_code')) {
       const id = decodeURIComponentSafe(hash.slice(1));
-      // Preserve real deep links, but fall back to the document title for stale/invalid hashes.
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        const didScrollToHash = scrollToSection(id, { updateUrl: false });
-        if (!didScrollToHash && options.scrollToTitle) scrollToDocumentTitle();
-        else if (!didScrollToHash) window.scrollTo({ top: restoreScrollY, behavior: 'auto' });
-      }));
-    } else if (options.scrollToTitle) {
-      // Opening a document always starts at its title, rather than inheriting the catalogue's scroll.
-      requestAnimationFrame(() => requestAnimationFrame(scrollToDocumentTitle));
+      // Explicit Markdown heading links are the only detail-view action that should scroll.
+      requestAnimationFrame(() => scrollToSection(id, { updateUrl: false }));
     } else {
       // Re-rendering a document (for example after voting) must not move the reader.
       requestAnimationFrame(() => window.scrollTo({ top: restoreScrollY, behavior: 'auto' }));
@@ -564,7 +548,7 @@
       state.allDocuments = state.allDocuments.map((item) => item.documentId === result.document.documentId
         ? { ...item, views: getViews(result.document), usefulCount: getUsefulCount(result.document), coverImage: result.document.coverImage || item.coverImage }
         : item);
-      renderDetail(result.document, result.feedback, result.pendingChange, { scrollY: requestedScrollY, scrollToTitle: true });
+      renderDetail(result.document, result.feedback, result.pendingChange, { scrollY: requestedScrollY });
     } catch (error) {
       $('#detail-view').innerHTML = `<div class="docs-empty-state"><span class="docs-empty-mark" aria-hidden="true">!</span><h3>Could not open this document</h3><p>${escapeHtml(error.message)}</p><button class="docs-small-button" data-go-catalogue type="button">← Back to all docs</button></div>`;
       requestAnimationFrame(() => window.scrollTo({ top: requestedScrollY, behavior: 'auto' }));
@@ -637,10 +621,13 @@
     form.elements.content.value = documentItem?.content || '';
     renderEditorChoices(documentItem);
     const sourceField = $('#doc-source-field');
-    // The source selector is optional in this page's form markup. Do not let its
-    // absence prevent the submission dialog from opening.
+    // Normal submissions never expose a collection selector. New admin documents
+    // are always Official; only editing an existing document can move collections.
     if (sourceField) sourceField.hidden = mode !== 'admin-edit';
     if (form.elements.source) form.elements.source.value = documentItem ? getSource(documentItem) : 'official';
+    const visibilityField = $('#doc-visibility-field');
+    if (visibilityField) visibilityField.hidden = mode !== 'admin-edit';
+    // Visibility is an admin-only option when editing an already-published document.
     if (form.elements.visibility) form.elements.visibility.value = documentItem?.visibility === 'private' ? 'private' : 'public';
     const title = mode === 'edit' ? 'Suggest edits' : mode === 'admin-create' ? 'Create a document' : mode === 'admin-edit' ? 'Edit document' : 'Submit documentation';
     const kicker = mode.startsWith('admin-') ? 'DOCUMENTATION ADMINISTRATION' : 'CONTRIBUTE TO THE KNOWLEDGE BASE';
@@ -785,9 +772,9 @@
       const pending = profilePendingList(data);
       $('#library-view').innerHTML = `
         <header class="docs-page-heading docs-library-heading"><div><div class="kicker">YOUR PANCAKE LIBRARY</div><h2 id="library-heading">My Library</h2><p>Keep your saved references, published guides, and submissions in one place.</p></div><button class="docs-back-button" type="button" data-go-catalogue>← Back to all docs</button></header>
-        <section class="docs-library-section"><div class="docs-library-section-heading"><div><h3>Saved favorites: <span class="docs-count-pill">${formatNumber(favorites.length)}</span></h3><p>Documents you bookmarked for later.</p></div><button class="docs-text-button" type="button" data-go-catalogue>Browse docs ↗</button></div><div class="docs-library-grid">${favorites.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">You have not saved any documents yet.</div>'}</div></section>
-        <section class="docs-library-section"><div class="docs-library-section-heading"><div><h3>Published by you: <span class="docs-count-pill">${formatNumber(authored.length)}</span></h3><p>Your documentation that has been approved and published.</p></div></div><div class="docs-library-grid">${authored.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">You have not published any documents yet.</div>'}</div></section>
-        <section class="docs-library-section" id="docs-pending-library"><div class="docs-library-section-heading"><div><h3>Pending for approval: <span class="docs-count-pill">${formatNumber(pending.length)}</span></h3><p>Submissions and edits waiting for the documentation team to review.</p></div></div><div class="docs-library-grid docs-pending-grid">${pending.map(pendingSubmissionCard).join('') || '<div class="docs-inline-empty">You have no documents waiting for approval.</div>'}</div></section>`;
+        <section class="docs-library-section"><div class="docs-library-section-heading"><div><h3>Saved favorites <span class="docs-count-pill">${formatNumber(favorites.length)}</span></h3><p>Documents you bookmarked for later.</p></div><button class="docs-text-button" type="button" data-go-catalogue>Browse docs ↗</button></div><div class="docs-library-grid">${favorites.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">You have not saved any documents yet.</div>'}</div></section>
+        <section class="docs-library-section"><div class="docs-library-section-heading"><div><h3>Published by you <span class="docs-count-pill">${formatNumber(authored.length)}</span></h3><p>Your documentation that has been approved and published.</p></div></div><div class="docs-library-grid">${authored.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">You have not published any documents yet.</div>'}</div></section>
+        <section class="docs-library-section" id="docs-pending-library"><div class="docs-library-section-heading"><div><h3>Pending for approval <span class="docs-count-pill">${formatNumber(pending.length)}</span></h3><p>Submissions and edits waiting for the documentation team to review.</p></div></div><div class="docs-library-grid docs-pending-grid">${pending.map(pendingSubmissionCard).join('') || '<div class="docs-inline-empty">You have no documents waiting for approval.</div>'}</div></section>`;
       // Switching to the library is not a reason to jump the page; keep the current viewport.
       requestAnimationFrame(() => window.scrollTo({ top: requestedScrollY, behavior: 'auto' }));
     } catch (error) {
@@ -806,7 +793,7 @@
     const requestRows = requests.map((request) => {
       const fields = request.fields || {};
       const typeLabel = request.requestType === 'edit' ? 'EDIT REQUEST' : 'NEW SUBMISSION';
-      return `<article class="docs-admin-row docs-request-row"><div class="docs-admin-row-main"><strong>${escapeHtml(fields.title || 'Untitled submission')}</strong><p>${escapeHtml(fields.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${typeLabel}</span><span>By: ${escapeHtml(request.authorDisplayName || 'Unknown')}</span><span>Submitted ${escapeHtml(formatDate(request.createdAt))}</span>${fields.topic ? `<span>${escapeHtml(fields.topic)}</span>` : ''}<span>Community</span></div></div><div class="docs-admin-row-actions"><button class="docs-small-button" type="button" data-action="toggle-request-preview">Preview</button><button class="docs-small-button" type="button" data-action="approve-request" data-request-id="${escapeHtml(request.requestId)}">Approve</button><button class="docs-small-button" type="button" data-action="reject-request" data-request-id="${escapeHtml(request.requestId)}">Reject</button></div><div class="docs-request-preview" hidden><div class="docs-admin-row-meta">${(fields.categories || []).map((category) => `<span>${escapeHtml(category)}</span>`).join('')}</div>${renderMarkdown(fields.content || '', 'docs-request-markdown')}</div></article>`;
+      return `<article class="docs-admin-row docs-request-row"><div class="docs-admin-row-main"><strong>${escapeHtml(fields.title || 'Untitled submission')}</strong><p>${escapeHtml(fields.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${typeLabel}</span><span>By ${escapeHtml(request.authorDisplayName || 'Unknown')}</span><span>Submitted ${escapeHtml(formatDate(request.createdAt))}</span>${fields.topic ? `<span>${escapeHtml(fields.topic)}</span>` : ''}<span>Community</span></div></div><div class="docs-admin-row-actions"><button class="docs-small-button" type="button" data-action="toggle-request-preview">Preview</button><button class="docs-small-button" type="button" data-action="approve-request" data-request-id="${escapeHtml(request.requestId)}">Approve</button><button class="docs-small-button" type="button" data-action="reject-request" data-request-id="${escapeHtml(request.requestId)}">Reject</button></div><div class="docs-request-preview" hidden><div class="docs-admin-row-meta">${(fields.categories || []).map((category) => `<span>${escapeHtml(category)}</span>`).join('')}</div>${renderMarkdown(fields.content || '', 'docs-request-markdown')}</div></article>`;
     }).join('');
     const officialRows = officialDocuments.map((item, index) => `<article class="docs-admin-row"><div class="docs-admin-row-main"><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${escapeHtml(getTopic(item))}</span><span>Official</span><span>Visibility: ${item.visibility === 'private' ? 'Private' : 'Public'}</span><span>Updated ${escapeHtml(formatDate(item.updatedAt || item.createdAt))}</span><span>Official order ${index + 1}</span></div></div><div class="docs-admin-row-actions"><div class="docs-order-buttons"><button type="button" data-action="move-doc" data-document-id="${escapeHtml(item.documentId)}" data-delta="-1" aria-label="Move up" ${index === 0 ? 'disabled' : ''}>↑</button><button type="button" data-action="move-doc" data-document-id="${escapeHtml(item.documentId)}" data-delta="1" aria-label="Move down" ${index === officialDocuments.length - 1 ? 'disabled' : ''}>↓</button></div><button type="button" class="docs-small-button" data-action="edit-admin-document" data-document-id="${escapeHtml(item.documentId)}">Edit</button><button type="button" class="docs-small-button" data-action="delete-admin-document" data-document-id="${escapeHtml(item.documentId)}">Delete</button></div></article>`).join('');
     const communityRows = communityDocuments.map((item) => `<article class="docs-admin-row"><div class="docs-admin-row-main"><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${escapeHtml(getTopic(item))}</span><span>Community</span><span>Visibility: ${item.visibility === 'private' ? 'Private' : 'Public'}</span><span>Updated ${escapeHtml(formatDate(item.updatedAt || item.createdAt))}</span><span>${formatNumber(getViews(item))} views</span></div></div><div class="docs-admin-row-actions"><button type="button" class="docs-small-button" data-action="edit-admin-document" data-document-id="${escapeHtml(item.documentId)}">Edit</button><button type="button" class="docs-small-button" data-action="delete-admin-document" data-document-id="${escapeHtml(item.documentId)}">Delete</button></div></article>`).join('');
