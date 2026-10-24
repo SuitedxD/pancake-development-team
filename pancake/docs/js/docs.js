@@ -146,7 +146,7 @@
     $('#library-button').hidden = !state.user;
     $('#logout-button').hidden = !state.user;
     $('#admin-button').hidden = !(state.user && state.canAccessAdmin);
-    if (state.user) $('#library-button').innerHTML = `${avatarMarkup(state.user, 'docs-avatar docs-header-avatar')} <span>My Library</span>`;
+    if (state.user) $('#library-button').innerHTML = `<span>My Library</span>`;
   }
 
   async function refreshSession() {
@@ -629,7 +629,7 @@
       const authored = Array.isArray(data.authored) ? data.authored : [];
       const pending = profilePendingList(data);
       $('#library-view').innerHTML = `
-        <header class="docs-page-heading docs-library-heading"><div><div class="docs-library-title-line">${avatarMarkup(state.user, 'docs-avatar docs-library-avatar')}<div><div class="kicker">YOUR PANCAKE LIBRARY</div><h2 id="library-heading">My Library</h2></div></div><p>Keep your saved references, published guides, and submissions in one place.</p></header>
+        <header class="docs-page-heading docs-library-heading"><div><div class="docs-library-title-line">${avatarMarkup(state.user, 'docs-avatar docs-library-avatar')}<div><h2 id="library-heading">My Library</h2></div></div><p>Keep your saved references, published guides, and submissions in one place.</p></header>
         <section class="docs-library-section"><div class="docs-library-section-heading"><div><h3>Saved favorites <span class="docs-count-pill">${formatNumber(favorites.length)}</span></h3><p>Documents you bookmarked for later.</p></div><button class="docs-text-button" type="button" data-go-catalogue>Browse docs ↗</button></div><div class="docs-library-grid">${favorites.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">You have not saved any documents yet.</div>'}</div></section>
         <section class="docs-library-section"><div class="docs-library-section-heading"><div><h3>Published by you <span class="docs-count-pill">${formatNumber(authored.length)}</span></h3><p>Your documentation that has been approved and published.</p></div></div><div class="docs-library-grid">${authored.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">You have not published any documents yet.</div>'}</div></section>
         <section class="docs-library-section"><div class="docs-library-section-heading"><div><h3>Pending for approval <span class="docs-count-pill">${formatNumber(pending.length)}</span></h3><p>Submissions and edits waiting for the documentation team to review.</p></div></div><div class="docs-library-grid">${pending.map(pendingSubmissionCard).join('') || '<div class="docs-inline-empty">You have no documents waiting for approval.</div>'}</div></section>`;
