@@ -246,8 +246,9 @@
 .docs-markdown th, .docs-markdown td { min-width: 90px; padding: 9px 10px; border: 1px solid rgba(255,255,255,.13); text-align: left; vertical-align: top; }
 .docs-markdown th { color: #f0eadd; background: rgba(255,255,255,.04); }
 .docs-markdown tr:nth-child(even) td { background: rgba(255,255,255,.018); }
-.docs-markdown .markdown-heading-anchor { margin-right: 8px; color: #777168; font-size: .8em; text-decoration: none; opacity: 0; transition: opacity .15s ease; }
-.docs-markdown h1:hover .markdown-heading-anchor, .docs-markdown h2:hover .markdown-heading-anchor, .docs-markdown h3:hover .markdown-heading-anchor, .docs-markdown h4:hover .markdown-heading-anchor { opacity: 1; }
+.docs-markdown .markdown-heading-anchor { display: inline-block; margin-right: 8px; color: var(--docs-accent, #ffd466); font-size: .85em; font-weight: 900; text-decoration: none; opacity: .72; transition: opacity .15s ease, color .15s ease, transform .15s ease; }
+.docs-markdown .markdown-heading-anchor:hover, .docs-markdown .markdown-heading-anchor:focus-visible { color: #ffebad; opacity: 1; transform: translateX(-1px); }
+.docs-markdown h1:hover .markdown-heading-anchor, .docs-markdown h2:hover .markdown-heading-anchor, .docs-markdown h3:hover .markdown-heading-anchor, .docs-markdown h4:hover .markdown-heading-anchor, .docs-markdown h5:hover .markdown-heading-anchor, .docs-markdown h6:hover .markdown-heading-anchor { opacity: 1; }
 .docs-code-block { position: relative; margin: 1.3em 0; border: 1px solid rgba(255,255,255,.105); border-radius: 11px; overflow: hidden; background: #080808; }
 .docs-code-block pre { max-width: 100%; margin: 0; padding: 17px; overflow: auto; color: #e9dfcc; font: 12px/1.7 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre; }
 .docs-code-block pre code { padding: 0; color: inherit; border: 0; background: transparent; font: inherit; }
@@ -322,8 +323,10 @@
 .docs-form-error { padding: 10px 11px; border: 1px solid rgba(255,120,95,.28); border-radius: 8px; color: #efac9d; background: rgba(255,100,75,.055); font-size: 10px; line-height: 1.6; }
 .docs-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; padding-top: 15px; border-top: 1px solid var(--docs-border); }
 .docs-dialog-actions .btn { min-height: 39px; }
-.docs-toast { position: sticky; top: 10px; z-index: 20; width: fit-content; max-width: 100%; margin: 12px auto 0; padding: 11px 15px; border: 1px solid rgba(255,212,102,.24); border-radius: 11px; color: #e7d5a2; background: rgba(18,17,14,.97); box-shadow: 0 12px 40px rgba(0,0,0,.3); font-size: 11px; line-height: 1.5; }
+.docs-toast { position: fixed; top: 76px; right: max(18px, calc((100vw - 1440px) / 2)); z-index: 1000; width: fit-content; max-width: min(360px, calc(100vw - 36px)); margin: 0; padding: 11px 15px; border: 1px solid rgba(255,212,102,.26); border-radius: 11px; color: #e7d5a2; background: rgba(18,17,14,.97); box-shadow: 0 12px 40px rgba(0,0,0,.3); font-size: 11px; line-height: 1.5; animation: docs-toast-in .18s ease-out both; }
+.docs-toast.is-success { border-color: rgba(255,212,102,.32); color: #f3dfaa; }
 .docs-toast.is-error { border-color: rgba(255,120,95,.35); color: #f2b4a8; }
+@keyframes docs-toast-in { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
 @media (max-width: 1050px) {
   .docs-catalog-layout { grid-template-columns: 210px minmax(0,1fr); gap: 15px; }

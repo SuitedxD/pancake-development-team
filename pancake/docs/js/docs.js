@@ -78,6 +78,9 @@
   function getSource(item) {
     if (!item) return 'community';
     if (item.isOfficial === true || item.official === true || item.createdByAdmin === true || item.isStaffDoc === true || item.publishedByAdmin === true || item.isPancakeDoc === true) return 'official';
+    // Prefer the API's explicit collection over older, potentially conflicting flags.
+    const explicitSource = String(item.source || '').trim().toLowerCase();
+    if (explicitSource === 'official' || explicitSource === 'community') return explicitSource;
     if (item.isCommunity === true) return 'community';
     const source = [item.source, item.section, item.collection, item.documentType, item.origin, item.type, item.official]
       .filter((value) => typeof value === 'string').join(' ').toLowerCase();
@@ -88,6 +91,11 @@
     // Older records may not have source metadata. Keep them visible in Community Docs
     // until an administrator assigns a collection in the editor.
     return 'community';
+  }
+  function getAuthorDisplayName(item) {
+    return getSource(item) === 'official'
+      ? 'Pancake Development Team'
+      : String(item?.authorDisplayName || item?.authorName || 'Unknown');
   }
   function safeHttpsUrl(value) {
     if (typeof value !== 'string' || !value.trim()) return '';
@@ -126,12 +134,12 @@
       toast.className = 'docs-toast';
       toast.setAttribute('role', 'status');
       toast.setAttribute('aria-live', 'polite');
-      $('.docs-shell')?.prepend(toast);
+      document.body.appendChild(toast);
     }
-    toast.className = `docs-toast${kind === 'error' ? ' is-error' : ''}`;
+    toast.className = `docs-toast${kind === 'error' ? ' is-error' : kind === 'success' ? ' is-success' : ''}`;
     toast.textContent = message;
     clearTimeout(notify.timer);
-    notify.timer = setTimeout(() => toast.remove(), 5000);
+    notify.timer = setTimeout(() => toast.remove(), 6000);
   }
 
   function setMode(mode) {
@@ -264,7 +272,7 @@
   function decodeURIComponentSafe(value) { try { return decodeURIComponent(value); } catch { return value; } }
 
   function docPageUrl(documentId) { return `${window.location.origin}${basePath}/?doc=${encodeURIComponent(documentId)}`; }
-  function shareUrl(documentId) { return `${apiBase}/share/docs/${encodeURIComponent(documentId)}`; }
+  function shareUrl(documentId) { return `${apiBase}/share/docs/${encodeURIComponent(documentId)}${window.location.hash || ''}`; }
   function socialImageFor(item) {
     const direct = safeHttpsUrl(item?.coverImage || item?.imageUrl || item?.thumbnail || item?.socialImage || '');
     if (direct) return direct;
@@ -328,7 +336,7 @@
     const updatedDate = formatDate(item.updatedAt || item.createdAt);
     const source = getSource(item);
     const href = pending ? '' : docPageUrl(item.documentId);
-    const metrics = `<div class="docs-card-metrics"><span title="Views"><span aria-hidden="true">◉</span> ${formatNumber(getViews(item))} views</span><span title="People who found this useful"><span aria-hidden="true">✓</span> ${formatNumber(getUsefulCount(item))} found this helpful</span></div>`;
+    const metrics = `<div class="docs-card-metrics">${source === 'official' ? '' : `<span title="Views"><span aria-hidden="true">◉</span> ${formatNumber(getViews(item))} views</span>`}<span title="People who found this useful"><span aria-hidden="true">✓</span> ${formatNumber(getUsefulCount(item))} found this helpful</span></div>`;
     const coverImage = safeHttpsUrl(item.coverImage || item.imageUrl || '');
     const coverMarkup = coverImage ? `<div class="docs-card-cover-wrap"><img class="docs-card-cover" src="${escapeHtml(coverImage)}" alt="${escapeHtml(item.title || 'Documentation')} cover" loading="lazy" decoding="async" referrerpolicy="no-referrer" /></div>` : '';
     return `
@@ -339,7 +347,7 @@
           <p class="docs-card-summary">${escapeHtml(item.summary || 'Open this document to read the full guide.')}</p>
           ${categoryChips ? `<div class="docs-card-categories" aria-label="Categories">${categoryChips}</div>` : ''}
           ${metrics}
-          <div class="docs-card-footer"><span>By <strong>${escapeHtml(item.authorDisplayName || item.authorName || 'Unknown')}</strong></span><span>${pending ? 'Submitted' : 'Updated'} <strong>${escapeHtml(updatedDate)}</strong></span>${pending ? '<span class="docs-status-pill">Pending for approval</span>' : ''}</div>
+          <div class="docs-card-footer"><span>By <strong>${escapeHtml(getAuthorDisplayName(item))}</strong></span><span>${pending ? 'Submitted' : 'Updated'} <strong>${escapeHtml(updatedDate)}</strong></span>${pending ? '<span class="docs-status-pill">Pending for approval</span>' : ''}</div>
         </div>
         <span class="docs-card-arrow" aria-hidden="true">${pending ? '◷' : '↗'}</span>
       </article>`;
@@ -472,6 +480,7 @@
     state.feedback = feedback || { yes: 0, no: 0, yourVote: null };
     state.pendingChange = pendingChange;
     updateShareMetadata(documentItem);
+    const source = getSource(documentItem);
     const owner = Boolean(state.user && String(state.user.discordId) === String(documentItem.authorId || ''));
     const topic = getTopic(documentItem);
     const favoriteLabel = documentItem.favorite ? 'Saved to favorites' : 'Save to favorites';
@@ -483,17 +492,17 @@
       <div class="docs-reading-layout">
         <article class="docs-article">
           <header class="docs-article-header">
-            <span class="docs-article-category">${getSource(documentItem) === 'official' ? 'Pancake Official Documentation' : 'Community Docs'}</span>
+            <span class="docs-article-category">${source === 'official' ? 'Pancake Official Documentation' : 'Community Docs'}</span>
             ${safeHttpsUrl(documentItem.coverImage || '') ? `<img class="docs-article-cover" src="${escapeHtml(safeHttpsUrl(documentItem.coverImage))}" alt="${escapeHtml(documentItem.title)} cover" loading="eager" decoding="async" referrerpolicy="no-referrer" />` : ''}
             <h1 class="docs-article-title">${escapeHtml(documentItem.title)}</h1>
             ${documentItem.summary ? `<p class="docs-article-summary">${escapeHtml(documentItem.summary)}</p>` : ''}
-            <div class="docs-article-meta"><span>By <strong>${escapeHtml(documentItem.authorDisplayName || 'Unknown')}</strong></span><span aria-hidden="true">·</span><span>Published <strong>${escapeHtml(formatDate(documentItem.createdAt))}</strong></span><span aria-hidden="true">·</span><span>Last updated <strong>${escapeHtml(formatDate(documentItem.updatedAt || documentItem.createdAt))}</strong></span></div>
+            <div class="docs-article-meta"><span>By <strong>${escapeHtml(getAuthorDisplayName(documentItem))}</strong></span><span aria-hidden="true">·</span><span>Published <strong>${escapeHtml(formatDate(documentItem.createdAt))}</strong></span><span aria-hidden="true">·</span><span>Last updated <strong>${escapeHtml(formatDate(documentItem.updatedAt || documentItem.createdAt))}</strong></span></div>
             ${detailCategories ? `<div class="docs-detail-categories" aria-label="Categories">${detailCategories}</div>` : ''}
             <div class="docs-article-actions">
               <button type="button" class="docs-action-button${documentItem.favorite ? ' is-active' : ''}" data-action="favorite-document" data-document-id="${escapeHtml(documentItem.documentId)}">☆ <span>${escapeHtml(favoriteLabel)}</span></button>
               ${owner && getSource(documentItem) !== 'official' ? `<button type="button" class="docs-action-button" data-action="edit-document" data-document-id="${escapeHtml(documentItem.documentId)}">✎ <span>Edit doc</span></button>` : ''}
               <button type="button" class="docs-action-button" data-action="share-document" data-document-id="${escapeHtml(documentItem.documentId)}">↗ <span>Share link</span></button>
-              <div class="docs-detail-metrics"><span><strong>${formatNumber(getViews(documentItem))}</strong> views</span><span><strong>${formatNumber(getUsefulCount(documentItem))}</strong> found this helpful</span></div>
+              <div class="docs-detail-metrics">${source === 'official' ? '' : `<span><strong>${formatNumber(getViews(documentItem))}</strong> views</span>`}<span><strong>${formatNumber(getUsefulCount(documentItem))}</strong> found this helpful</span></div>
             </div>
             ${pendingNotice}
           </header>
@@ -576,7 +585,9 @@
     form.elements.content.value = documentItem?.content || '';
     renderEditorChoices(documentItem);
     const sourceField = $('#doc-source-field');
-    sourceField.hidden = !mode.startsWith('admin-');
+    // Normal submissions never expose a collection selector. New admin documents
+    // are always Official; only editing an existing document can move collections.
+    sourceField.hidden = mode !== 'admin-edit';
     if (form.elements.source) form.elements.source.value = documentItem ? getSource(documentItem) : 'official';
     const visibilityField = $('#doc-visibility-field');
     visibilityField.hidden = mode !== 'admin-edit';
@@ -586,7 +597,7 @@
     const copy = mode === 'edit'
       ? 'Suggest corrections or improvements to a Community Doc. Your changes will be reviewed before the public version is updated.'
       : mode === 'admin-create'
-        ? 'Publish an official Pancake reference or a community resource. Official documents appear in the same order visitors see; administrators can arrange them with the order controls.'
+        ? 'New documents created here are always published in Pancake Official Documentation. Official documents appear in the same order visitors see; administrators can arrange them with the order controls.'
         : mode === 'admin-edit'
           ? 'Update this published document, choose its visibility, or move it between official and community collections.'
           : 'Share a useful guide with the Pancake community. New submissions always enter the Community Docs review queue.';
@@ -628,7 +639,9 @@
       errorBox.textContent = 'Cover image must be a valid HTTPS URL.'; errorBox.hidden = false; return;
     }
     submitButton.disabled = true; submitButton.textContent = 'Saving…';
-    if (mode.startsWith('admin-')) fields.source = form.elements.source?.value || 'official';
+    if (mode === 'submission' || mode === 'edit') fields.source = 'community';
+    else if (mode === 'admin-create') fields.source = 'official';
+    else if (mode === 'admin-edit') fields.source = form.elements.source?.value || getSource(state.adminData.documents.find((item) => item.documentId === state.editorDocumentId) || {});
     if (mode === 'admin-edit') fields.visibility = form.elements.visibility?.value || 'public';
     try {
       let response;
@@ -679,7 +692,7 @@
     state.allDocuments = state.allDocuments.map((item) => item.documentId === documentId ? { ...item, usefulCount: count } : item);
     if (state.currentMode === 'catalogue') renderCatalogue();
   }
-  async function copyText(text, button = null, successMessage = 'Copied to clipboard.') {
+  async function copyText(text, button = null, successMessage = 'Copied to clipboard.', successKind = 'success') {
     try {
       if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
       else {
@@ -690,7 +703,7 @@
       if (button) {
         button.classList.add('is-copied'); const label = $('span', button); if (label) label.textContent = 'Copied';
         setTimeout(() => button.classList.remove('is-copied'), 1300);
-      } else notify(successMessage);
+      } else notify(successMessage, successKind);
     } catch (error) { notify(error.message || 'Could not copy to clipboard.', 'error'); }
   }
 
@@ -879,7 +892,13 @@
     if (action === 'vote-useful') { await voteUseful(documentId, actionButton.dataset.useful === 'true'); return; }
     if (action === 'share-document') {
       const url = shareUrl(documentId);
-      await copyText(url, null, 'Share link copied to clipboard.'); return;
+      try {
+        await navigator.clipboard.writeText(url);
+        notify('Share link copied to clipboard.', 'success');
+      } catch {
+        window.prompt('Copy this documentation share link:', url);
+      }
+      return;
     }
     if (action === 'edit-document') { if (state.selectedDocument?.documentId === documentId) requireLoginThen(() => openDocForm('edit', state.selectedDocument)); return; }
     if (action === 'new-admin-document') { openDocForm('admin-create'); return; }

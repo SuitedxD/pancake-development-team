@@ -1,4 +1,4 @@
-// portal.js
+// plugins/portal.js
 
 (() => {
   'use strict';
