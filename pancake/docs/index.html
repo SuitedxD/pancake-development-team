@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#ffd466" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta name="portal-base-path" content="/pancake-development-team/pancake/docs" />
+  <meta name="api-base" content="https://pancake-development-team-api.onrender.com" />
+
+  <link rel="icon" type="image/png" href="../../assets/favicon.png" />
+  <link rel="alternate icon" href="../../assets/favicon.png" />
+
+  <title>PANCAKE — The next step in Discord bots</title>
+  <meta name="description" content="Explore the official PANCAKE documentation, guides, and community knowledge." />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="PANCAKE — The next step in Discord bots" />
+  <meta property="og:site_name" content="PANCAKE — The next step in Discord bots" />
+  <meta property="og:description" content="Pancake is an all-in-one bot with a unique and exclusive plugin system at its core. With plugins, you can install different sets of commands on each server, keep your bot clean and focused with only the features you need." />
+  <meta property="og:url" content="https://suitedxd.github.io/pancake-development-team/pancake/docs/" />
+  <meta property="og:image" content="https://suitedxd.github.io/pancake-development-team/assets/pancake/pancake-social_02.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="PANCAKE — The next step in Discord bots" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="PANCAKE — The next step in Discord bots" />
+  <meta name="twitter:description" content="Pancake is an all-in-one bot with a unique and exclusive plugin system at its core. With plugins, you can install different sets of commands on each server, keep your bot clean and focused with only the features you need." />
+  <meta name="twitter:image" content="https://suitedxd.github.io/pancake-development-team/assets/pancake/pancake-social_02.png" />
+
+  <link rel="stylesheet" href="../../css/style.css" />
+  <link rel="stylesheet" href="css/docs.css" />
+</head>
+<body>
+  <main class="app-root docs-root" id="top">
+    <div class="shell docs-shell">
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a class="brand" href="../../" aria-label="Pancake Development Team home">
+          <span class="brand-mark" aria-hidden="true">
+            <img src="../../assets/pancake_team_icon_01.png" alt="" />
+          </span>
+          <span class="brand-name">Pancake Development Team</span>
+        </a>
+        <div class="nav-links">
+          <a href="../../#about-us">About Us</a>
+          <a href="../../#projects">Projects</a>
+        </div>
+      </nav>
+    </div>
+
+    <section class="docs-hero" data-nav-theme="light" aria-labelledby="docs-title">
+      <div class="docs-hero-icon" aria-hidden="true"><img src="../../assets/pancake_team_hero_icon_01.png" alt="" /></div>
+      <div class="shell docs-hero-inner">
+        <div class="kicker">PANCAKE KNOWLEDGE BASE</div>
+        <div class="docs-hero-row">
+          <div class="docs-hero-copy">
+            <h1 id="docs-title" class="docs-title">Documents</h1>
+            <p class="docs-lede">Guides, explanations, and answers from the Pancake community — all in one place.</p>
+          </div>
+          <div class="docs-account-actions" aria-label="Account actions">
+            <button class="btn btn-secondary" id="login-button" type="button">Sign in with Discord <span aria-hidden="true">↗</span></button>
+            <button class="docs-small-button" id="submit-doc-button" type="button" hidden>＋ Submit documentation</button>
+            <button class="docs-small-button" id="library-button" type="button" hidden>My Library</button>
+            <button class="docs-small-button" id="admin-button" type="button" hidden>Admin Panel</button>
+            <button class="docs-small-button" id="logout-button" type="button" hidden>Log Out</button>
+          </div>
+        </div>
+
+        <div class="docs-search-panel">
+          <span class="docs-search-icon" aria-hidden="true">⌕</span>
+          <input id="docs-search" type="search" aria-label="Search documents" placeholder="Search documents, topics, or keywords…" autocomplete="off" />
+        </div>
+        <div class="docs-search-caption"><span id="docs-result-count">Loading documents…</span><span>Markdown-powered · Community maintained</span></div>
+      </div>
+    </section>
+
+    <section class="docs-main-section" data-nav-theme="dark">
+      <div class="shell docs-main-shell">
+        <section class="docs-catalogue" id="catalogue-view" aria-labelledby="catalogue-heading">
+          <div class="docs-section-heading">
+            <div>
+              <div class="kicker">EXPLORE THE KNOWLEDGE BASE</div>
+              <h2 id="catalogue-heading">Find your answer.</h2>
+            </div>
+            <button class="docs-text-button" id="clear-search-button" type="button" hidden>Clear search <span aria-hidden="true">×</span></button>
+          </div>
+          <div class="docs-catalog-layout">
+            <aside class="docs-topic-sidebar" aria-label="Filter by topic">
+              <div class="docs-sidebar-label">TOPICS</div>
+              <div id="docs-topic-filters" class="docs-topic-filters">
+                <button class="docs-topic-button is-active" data-topic="" type="button">All documents <span>—</span></button>
+              </div>
+              <div class="docs-sidebar-note">
+                <span class="docs-note-mark" aria-hidden="true">✳</span>
+                <p>Something missing?</p>
+                <span>Share what you know with the community.</span>
+                <button type="button" class="docs-text-button" id="sidebar-submit-button">Submit documentation ↗</button>
+              </div>
+            </aside>
+            <div class="docs-results-column">
+              <div id="docs-list" class="docs-list" aria-live="polite">
+                <div class="docs-loading"><span class="docs-loader" aria-hidden="true"></span><span>Gathering the pages…</span></div>
+              </div>
+              <div id="docs-empty-state" class="docs-empty-state" hidden>
+                <span class="docs-empty-mark" aria-hidden="true">⌕</span>
+                <h3>No documents found</h3>
+                <p>Try another search or choose a different topic.</p>
+                <button class="docs-small-button" type="button" id="reset-search-button">Reset filters</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="docs-detail" id="detail-view" hidden aria-live="polite"></section>
+        <section class="docs-library" id="library-view" hidden aria-labelledby="library-heading"></section>
+        <section class="docs-admin" id="admin-view" hidden aria-labelledby="admin-heading"></section>
+      </div>
+    </section>
+
+    <div class="shell">
+      <footer aria-label="Pancake Development Team footer">
+        <div class="footer-line">
+          <span>© <span id="year"></span> Pancake Development Team</span>
+          <div class="footer-contact" aria-label="Contact">
+            <a href="https://discord.gg/V2psxDQdhZ" target="_blank" rel="noopener noreferrer">Support Server</a><span aria-hidden="true">·</span>
+            <a href="https://github.com/SuitedxD/Pancake" target="_blank" rel="noopener noreferrer">GitHub</a><span aria-hidden="true">·</span>
+            <a href="mailto:pancakebot.team@gmail.com">Contact</a><span aria-hidden="true">·</span>
+            <a href="https://github.com/SuitedxD/Pancake/blob/main/TERMS.md" target="_blank" rel="noopener noreferrer">Terms</a><span aria-hidden="true">·</span>
+            <a href="https://github.com/SuitedxD/Pancake/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer">Privacy</a>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </main>
+
+  <dialog class="docs-dialog docs-auth-dialog" id="admin-auth-dialog" aria-labelledby="admin-auth-title">
+    <div class="docs-dialog-heading">
+      <div><div class="kicker">RESTRICTED ACCESS</div><h2 id="admin-auth-title">Admin verification</h2></div>
+      <button class="docs-dialog-close" type="button" data-close-dialog="admin-auth-dialog" aria-label="Close">×</button>
+    </div>
+    <p class="docs-dialog-copy">Sign in with an authorized Discord account, then enter your existing Plugin Portal admin credentials to manage Documents.</p>
+    <form id="admin-auth-form" class="docs-form">
+      <label class="docs-field"><span>Site admin username</span><input name="username" type="text" autocomplete="username" minlength="3" maxlength="64" required /></label>
+      <label class="docs-field"><span>Site admin password</span><input name="password" type="password" autocomplete="current-password" minlength="12" maxlength="256" required /></label>
+      <div class="docs-form-error" id="admin-auth-error" role="alert" hidden></div>
+      <div class="docs-dialog-actions"><button class="docs-small-button" type="button" data-close-dialog="admin-auth-dialog">Cancel</button><button class="btn btn-primary" type="submit">Verify access <span aria-hidden="true">↗</span></button></div>
+    </form>
+  </dialog>
+
+  <dialog class="docs-dialog docs-editor-dialog" id="doc-form-dialog" aria-labelledby="doc-form-title">
+    <div class="docs-dialog-heading">
+      <div><div class="kicker" id="doc-form-kicker">CONTRIBUTE TO THE KNOWLEDGE BASE</div><h2 id="doc-form-title">Submit documentation</h2></div>
+      <button class="docs-dialog-close" type="button" data-close-dialog="doc-form-dialog" aria-label="Close">×</button>
+    </div>
+    <p class="docs-dialog-copy" id="doc-form-copy">Share a useful guide with the Pancake community. New submissions are reviewed by the documentation team before publishing.</p>
+    <form id="doc-form" class="docs-form">
+      <label class="docs-field"><span>Document title</span><input name="title" type="text" minlength="2" maxlength="120" placeholder="e.g. Getting started with Pancake" required /></label>
+      <div class="docs-form-row">
+        <label class="docs-field"><span>Topic</span><input name="category" type="text" maxlength="60" placeholder="Getting started" /></label>
+        <label class="docs-field"><span>Tags</span><input name="tags" type="text" maxlength="400" placeholder="setup, commands, tips" /><small>Separate tags with commas.</small></label>
+      </div>
+      <label class="docs-field"><span>Short summary</span><textarea name="summary" rows="2" maxlength="500" placeholder="What will readers learn from this page?"></textarea></label>
+      <label class="docs-field"><span>Document content <b>Markdown</b></span><textarea name="content" rows="13" maxlength="50000" placeholder="# Heading\n\nWrite your documentation in Markdown…" required></textarea><small>Headings, links, tables, lists, and fenced code blocks are supported.</small></label>
+      <div class="docs-preview-tools"><button type="button" class="docs-text-button" id="toggle-markdown-preview">Preview Markdown ↗</button></div>
+      <div id="markdown-preview" class="docs-markdown docs-markdown-preview" hidden></div>
+      <div class="docs-form-error" id="doc-form-error" role="alert" hidden></div>
+      <div class="docs-dialog-actions"><button class="docs-small-button" type="button" data-close-dialog="doc-form-dialog">Cancel</button><button class="btn btn-primary" type="submit" id="doc-form-submit">Send for review <span aria-hidden="true">↗</span></button></div>
+    </form>
+  </dialog>
+
+  <script src="../../js/main.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@18.1.0/lib/marked.umd.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.16/dist/purify.min.js" defer></script>
+  <script src="js/docs.js" defer></script>
+</body>
+</html>

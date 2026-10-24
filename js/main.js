@@ -1,4 +1,4 @@
-// js/main.js — shared site behavior
+// js/main.js — frontend
 (() => {
   'use strict';
 
