@@ -59,7 +59,7 @@
         </div>
         <div class="docs-search-panel">
           <span class="docs-search-icon" aria-hidden="true">⌕</span>
-          <input id="docs-search" type="search" aria-label="Search documents" placeholder="Search docs, topics, tags, or keywords…" autocomplete="off" />
+          <input id="docs-search" type="search" aria-label="Search documents" placeholder="Search docs, topics, categories, or keywords…" autocomplete="off" />
           <button class="docs-search-clear" id="clear-search-button" type="button" hidden aria-label="Clear search">×</button>
         </div>
         <div class="docs-search-caption"><span id="docs-result-count">Loading documents…</span><span>Markdown-powered · Community maintained</span></div>
@@ -74,6 +74,14 @@
             <button class="docs-text-button" id="reset-search-button" type="button" hidden>Reset filters <span aria-hidden="true">×</span></button>
           </div>
           <div class="docs-catalog-layout">
+            <aside class="docs-topic-sidebar" aria-label="Filter documentation by topic and category">
+              <div class="docs-sidebar-label">TOPICS</div>
+              <div id="docs-topic-filters" class="docs-topic-filters"><button class="docs-topic-button is-active" data-topic-filter="" type="button" aria-pressed="true">All topics</button></div>
+              <div class="docs-sidebar-divider"></div>
+              <div class="docs-sidebar-label">CATEGORIES</div>
+              <div id="docs-category-filters" class="docs-topic-filters docs-category-filters"><button class="docs-topic-button is-active" data-category-filter="" type="button" aria-pressed="true">All categories</button></div>
+              <div class="docs-sidebar-note"><span class="docs-note-mark" aria-hidden="true">✳</span><p>Something missing?</p><span>Share a helpful guide with the Pancake community.</span><button type="button" class="docs-text-button" id="sidebar-submit-button">Submit documentation ↗</button></div>
+            </aside>
             <div class="docs-results-column">
               <section class="docs-collection" aria-labelledby="official-docs-heading">
                 <div class="docs-collection-heading"><div><div class="kicker">MAINTAINED BY PANCAKE</div><h2 id="official-docs-heading">Pancake Official Documentation</h2><p>Core guides, features, setup, and official references.</p></div><div class="docs-collection-tools"><span class="docs-count-pill" id="official-count">0 official documents</span></div></div>
@@ -81,10 +89,9 @@
               </section>
               <section class="docs-collection docs-community-collection" aria-labelledby="community-docs-heading">
                 <div class="docs-collection-heading"><div><div class="kicker">WRITTEN BY THE COMMUNITY</div><h2 id="community-docs-heading">Community Docs</h2><p>Practical walkthroughs, tips, and guides from Pancake users.</p></div><div class="docs-collection-tools"><span class="docs-count-pill" id="community-count">0</span><label class="docs-sort-wrap"><span>Sort</span><select id="community-sort" aria-label="Sort community documentation"><option value="newest">Recently added</option><option value="views">Most viewed</option><option value="helpful">Most helpful</option><option value="az">Name A–Z</option></select></label></div></div>
-                <div class="docs-community-filter-bar" aria-label="Filter community documents only"><div class="docs-community-filter-row"><span class="docs-community-filter-label">Topics</span><div id="community-topic-filters" class="docs-community-filter-chips"></div></div><div class="docs-community-filter-row"><span class="docs-community-filter-label">Tags</span><div id="community-tag-filters" class="docs-community-filter-chips"></div></div></div>
                 <div id="community-docs-list" class="docs-list" aria-live="polite"><div class="docs-loading"><span class="docs-loader" aria-hidden="true"></span><span>Gathering community documents…</span></div></div>
               </section>
-              <div id="docs-empty-state" class="docs-empty-state" hidden><span class="docs-empty-mark" aria-hidden="true">⌕</span><h3>No documents found</h3><p>Try another search, tag, or topic.</p><button class="docs-small-button" type="button" data-reset-filters>Reset filters</button></div>
+              <div id="docs-empty-state" class="docs-empty-state" hidden><span class="docs-empty-mark" aria-hidden="true">⌕</span><h3>No documents found</h3><p>Try another search, category, or topic.</p><button class="docs-small-button" type="button" data-reset-filters>Reset filters</button></div>
             </div>
           </div>
         </section>
@@ -108,10 +115,10 @@
     <p class="docs-dialog-copy" id="doc-form-copy">Share a useful guide with the Pancake community. New submissions are reviewed before publishing.</p>
     <form id="doc-form" class="docs-form">
       <label class="docs-field"><span>Document title</span><input name="title" type="text" minlength="2" maxlength="120" placeholder="e.g. Getting started with Pancake" required /></label>
-      <input name="category" type="hidden" value="Other" />
-      <input name="tags" type="hidden" value="" />
+      <input name="topic" type="hidden" value="" />
+      <input name="categories" type="hidden" value="" />
       <fieldset class="docs-choice-field"><legend>Topic <span class="docs-choice-required">Choose one</span></legend><div class="docs-choice-grid docs-topic-choice-grid" id="doc-topic-options"></div></fieldset>
-      <fieldset class="docs-choice-field" id="doc-tag-choice-field"><legend>Tags <span class="docs-choice-required">Choose at least one</span></legend><div class="docs-choice-grid docs-tag-choice-grid" id="doc-tag-options"></div><small>These tags are also used as selectable filters throughout Docs.</small><p class="docs-field-inline-error" id="doc-tags-error" hidden>Choose at least one tag.</p></fieldset>
+      <fieldset class="docs-choice-field" id="doc-category-choice-field"><legend>Categories <span class="docs-choice-required">Choose at least one</span></legend><div class="docs-choice-grid docs-category-choice-grid" id="doc-category-options"></div><small>These categories are also used as selectable filters throughout Docs.</small><p class="docs-field-inline-error" id="doc-categories-error" hidden>Choose at least one category.</p></fieldset>
       <label class="docs-field" id="doc-visibility-field" hidden><span>Visibility</span><select name="visibility"><option value="public">Public — visible to everyone</option><option value="private">Private — hidden from the public catalogue</option></select><small>Visibility can be changed by an administrator when editing a published document.</small></label>
       <label class="docs-field"><span>Short summary <b>REQUIRED</b></span><textarea name="summary" rows="2" minlength="10" maxlength="500" placeholder="What will readers learn from this page?" required></textarea><small>Use at least 10 characters to explain what this document covers.</small></label>
       <label class="docs-field"><span>Cover image URL <small>(optional)</small></span><input name="coverImage" type="url" maxlength="2048" placeholder="https://example.com/document-cover.png" /><small>Paste a direct HTTPS image URL. It will appear on the document card and social share preview.</small></label>

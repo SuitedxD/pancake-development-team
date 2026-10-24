@@ -7,7 +7,7 @@
   const viewerKey = 'pancakeDocsViewerId';
   const defaultSocialImage = 'https://suitedxd.github.io/pancake-development-team/assets/pancake/pancake-social_02.png';
   const DOC_TOPICS = ['Getting Started', 'Installation', 'Configuration', 'Commands', 'Moderation', 'Administration', 'Permissions', 'Roles', 'Plugins', 'Plugin Development', 'Automation', 'Integrations', 'Troubleshooting', 'FAQs', 'Server Setup', 'Dashboard', 'Security', 'Events', 'Music & Media', 'Economy', 'Levels & XP', 'Logging', 'Webhooks', 'API & Developers', 'Customization', 'Other'];
-  const DOC_TAGS = ['Setup', 'Beginner', 'Advanced', 'Commands', 'Configuration', 'Permissions', 'Discord', 'Server Management', 'Moderation', 'Automation', 'Plugin', 'Admin', 'API', 'Integration', 'Troubleshooting', 'Examples', 'Guide', 'FAQ', 'Security', 'Tips', 'Customization', 'Performance', 'Updates', 'Logging', 'Markdown', 'Webhooks', 'Community', 'Official', 'Other'];
+  const DOC_CATEGORIES = ['Setup', 'Beginner', 'Advanced', 'Commands', 'Configuration', 'Permissions', 'Discord', 'Server Management', 'Moderation', 'Automation', 'Plugin', 'Admin', 'API', 'Integration', 'Troubleshooting', 'Examples', 'Guide', 'FAQ', 'Security', 'Tips', 'Customization', 'Performance', 'Updates', 'Logging', 'Markdown', 'Webhooks', 'Community', 'Official', 'Other'];
 
   function readAccessToken() {
     try { return localStorage.getItem(accessTokenKey) || ''; } catch { return ''; }
@@ -28,11 +28,10 @@
 
   const state = {
     accessToken: readAccessToken(), viewerId: getViewerId(), user: null, canAccessAdmin: false,
-    adminUnlocked: false, currentMode: 'catalogue', allDocuments: [], categories: [],
-    selectedCategory: '', selectedTag: '', query: '',
-    communitySelectedCategory: '', communitySelectedTag: '',
+    adminUnlocked: false, currentMode: 'catalogue', allDocuments: [],
+    selectedTopic: '', selectedCategory: '', query: '',
     sort: { community: 'newest' },
-    editorCategory: 'Other', editorTags: [],
+    editorTopic: '', editorCategories: [],
     selectedDocument: null, feedback: null, pendingChange: null,
     adminData: { documents: [], requests: [] }, editorMode: 'submission', editorDocumentId: '',
     editorOrder: 0, previewVisible: false
@@ -66,16 +65,14 @@
     );
   }
   function getTopic(itemOrValue) {
-    const value = typeof itemOrValue === 'string' ? itemOrValue : itemOrValue?.category;
+    const value = typeof itemOrValue === 'string' ? itemOrValue : itemOrValue?.topic;
     const normalized = String(value || '').trim().toLowerCase();
     return DOC_TOPICS.find((topic) => topic.toLowerCase() === normalized) || 'Other';
   }
-  function getTags(item) {
-    if (!Array.isArray(item?.tags)) return [];
-    const normalized = item.tags
-      .map((tag) => String(tag || '').trim())
-      .filter(Boolean)
-      .map((tag) => DOC_TAGS.find((knownTag) => knownTag.toLowerCase() === tag.toLowerCase()) || 'Other');
+  function getCategories(item) {
+    const values = Array.isArray(item?.categories) ? item.categories : [];
+    const normalized = values.map((value) => String(value || '').trim()).filter(Boolean)
+      .map((value) => DOC_CATEGORIES.find((known) => known.toLowerCase() === value.toLowerCase()) || 'Other');
     return [...new Set(normalized)];
   }
   function getSource(item) {
@@ -326,8 +323,8 @@
   }
 
   function cardMarkup(item, { pending = false } = {}) {
-    const category = getTopic(item);
-    const tags = getTags(item).slice(0, 6).map((tag) => `<button type="button" class="docs-tag${state.selectedTag.toLowerCase() === tag.toLowerCase() ? ' is-active' : ''}" data-tag-filter="${escapeHtml(tag)}" aria-pressed="${state.selectedTag.toLowerCase() === tag.toLowerCase()}">#${escapeHtml(tag)}</button>`).join('');
+    const topic = getTopic(item);
+    const categoryChips = getCategories(item).slice(0, 6).map((category) => `<button type="button" class="docs-category-chip${state.selectedCategory.toLowerCase() === category.toLowerCase() ? ' is-active' : ''}" data-category-filter="${escapeHtml(category)}" aria-pressed="${state.selectedCategory.toLowerCase() === category.toLowerCase()}">${escapeHtml(category)}</button>`).join('');
     const updatedDate = formatDate(item.updatedAt || item.createdAt);
     const source = getSource(item);
     const href = pending ? '' : docPageUrl(item.documentId);
@@ -337,10 +334,10 @@
     return `
       <article class="docs-card${pending ? ' is-pending' : ''}" ${pending ? '' : `data-card-href="${escapeHtml(href)}" tabindex="0" role="link" aria-label="Open document ${escapeHtml(item.title)}"`}>
         ${coverMarkup}<div class="docs-card-main">
-          <div class="docs-card-eyebrow"><button class="docs-topic-pill docs-topic-pill-button" type="button" data-topic-filter="${escapeHtml(category)}" aria-label="Filter by ${escapeHtml(category)}">${escapeHtml(category)}</button><span class="docs-card-dot">·</span><span>${source === 'official' ? 'PANCAKE OFFICIAL' : 'COMMUNITY DOCUMENTATION'}</span></div>
+          <div class="docs-card-eyebrow"><button class="docs-topic-pill docs-topic-pill-button" type="button" data-topic-filter="${escapeHtml(topic)}" aria-label="Filter by topic ${escapeHtml(topic)}">${escapeHtml(topic)}</button><span class="docs-card-dot">·</span><span>${source === 'official' ? 'PANCAKE OFFICIAL' : 'COMMUNITY DOCUMENTATION'}</span></div>
           <h3>${pending ? escapeHtml(item.title || 'Untitled submission') : `<a class="docs-card-link" data-open-doc="${escapeHtml(item.documentId)}" href="${escapeHtml(href)}">${escapeHtml(item.title)}</a>`}</h3>
           <p class="docs-card-summary">${escapeHtml(item.summary || 'Open this document to read the full guide.')}</p>
-          ${tags ? `<div class="docs-card-tags">${tags}</div>` : ''}
+          ${categoryChips ? `<div class="docs-card-categories" aria-label="Categories">${categoryChips}</div>` : ''}
           ${metrics}
           <div class="docs-card-footer"><span>By <strong>${escapeHtml(item.authorDisplayName || item.authorName || 'Unknown')}</strong></span><span>${pending ? 'Submitted' : 'Updated'} <strong>${escapeHtml(updatedDate)}</strong></span>${pending ? '<span class="docs-status-pill">Pending for approval</span>' : ''}</div>
         </div>
@@ -349,65 +346,37 @@
   }
 
   function renderTopics() {
-    const renderTopicButtons = (target, selectedValue, attr, items, counter) => {
+    const renderButtons = (target, selectedValue, attr, items, getSelected, allLabel) => {
       if (!target) return;
-      const allActive = !selectedValue;
-      const allCount = counter ? counter('') : state.allDocuments.length;
-      let html = `<button type="button" class="${attr.startsWith('data-community') ? 'docs-community-filter-chip' : 'docs-topic-button'}${allActive ? ' is-active' : ''}" ${attr}="" aria-pressed="${allActive}">All topics${attr.startsWith('data-community') ? '' : ` <span>${formatNumber(allCount)}</span>`}</button>`;
-      html += items.map((item) => {
-        const active = item.toLowerCase() === String(selectedValue || '').toLowerCase();
-        const count = counter ? counter(item) : 0;
-        return `<button type="button" class="${attr.startsWith('data-community') ? 'docs-community-filter-chip' : 'docs-topic-button'}${active ? ' is-active' : ''}" ${attr}="${escapeHtml(item)}" aria-pressed="${active}">${escapeHtml(item)}${attr.startsWith('data-community') ? '' : ` <span>${formatNumber(count)}</span>`}</button>`;
+      const allCount = state.allDocuments.length;
+      let html = `<button type="button" class="docs-topic-button${!selectedValue ? ' is-active' : ''}" ${attr}="" aria-pressed="${!selectedValue}">${allLabel} <span>${formatNumber(allCount)}</span></button>`;
+      html += items.map((value) => {
+        const active = value.toLowerCase() === String(selectedValue || '').toLowerCase();
+        const count = state.allDocuments.filter((item) => getSelected(item, value)).length;
+        return `<button type="button" class="docs-topic-button${active ? ' is-active' : ''}" ${attr}="${escapeHtml(value)}" aria-pressed="${active}">${escapeHtml(value)} <span>${formatNumber(count)}</span></button>`;
       }).join('');
       target.innerHTML = html;
     };
-    const communityDocs = state.allDocuments.filter((item) => getSource(item) !== 'official');
-    renderTopicButtons($('#docs-topic-filters'), state.selectedCategory, 'data-topic-filter', DOC_TOPICS,
-      (topic) => topic ? state.allDocuments.filter((item) => getTopic(item) === topic).length : state.allDocuments.length);
-    const tagsWrap = $('#docs-tag-filters');
-    if (tagsWrap) {
-      const allActive = !state.selectedTag;
-      const allCount = state.allDocuments.filter((item) => getTags(item).length > 0).length;
-      tagsWrap.innerHTML = `<button type="button" class="docs-topic-button docs-tag-filter${allActive ? ' is-active' : ''}" data-tag-filter="" aria-pressed="${allActive}">All tags <span>${formatNumber(allCount)}</span></button>` + DOC_TAGS.map((tag) => {
-        const active = tag.toLowerCase() === state.selectedTag.toLowerCase();
-        const count = state.allDocuments.filter((item) => getTags(item).some((itemTag) => itemTag.toLowerCase() === tag.toLowerCase())).length;
-        return `<button type="button" class="docs-topic-button docs-tag-filter${active ? ' is-active' : ''}" data-tag-filter="${escapeHtml(tag)}" aria-pressed="${active}">#${escapeHtml(tag)} <span>${formatNumber(count)}</span></button>`;
-      }).join('');
-    }
-    renderTopicButtons($('#community-topic-filters'), state.communitySelectedCategory, 'data-community-topic-filter', DOC_TOPICS,
-      (topic) => topic ? communityDocs.filter((item) => getTopic(item) === topic).length : communityDocs.length);
-    const communityTags = $('#community-tag-filters');
-    if (communityTags) {
-      const allActive = !state.communitySelectedTag;
-      const countAll = communityDocs.filter((item) => getTags(item).length > 0).length;
-      communityTags.innerHTML = `<button type="button" class="docs-community-filter-chip${allActive ? ' is-active' : ''}" data-community-tag-filter="" aria-pressed="${allActive}">All tags</button>` + DOC_TAGS.map((tag) => {
-        const active = tag.toLowerCase() === state.communitySelectedTag.toLowerCase();
-        const count = communityDocs.filter((item) => getTags(item).some((itemTag) => itemTag.toLowerCase() === tag.toLowerCase())).length;
-        return `<button type="button" class="docs-community-filter-chip${active ? ' is-active' : ''}" data-community-tag-filter="${escapeHtml(tag)}" aria-pressed="${active}">#${escapeHtml(tag)}</button>`;
-      }).join('');
-    }
+    renderButtons($('#docs-topic-filters'), state.selectedTopic, 'data-topic-filter', DOC_TOPICS,
+      (item, value) => getTopic(item) === value, 'All topics');
+    renderButtons($('#docs-category-filters'), state.selectedCategory, 'data-category-filter', DOC_CATEGORIES,
+      (item, value) => getCategories(item).some((category) => category.toLowerCase() === value.toLowerCase()), 'All categories');
   }
 
   function syncCatalogueUrl({ replace = false } = {}) {
     const url = new URL(`${basePath}/`, window.location.origin);
     if (state.query.trim()) url.searchParams.set('q', state.query.trim());
+    if (state.selectedTopic) url.searchParams.set('topic', state.selectedTopic);
     if (state.selectedCategory) url.searchParams.set('category', state.selectedCategory);
-    if (state.selectedTag) url.searchParams.set('tag', state.selectedTag);
-    if (state.communitySelectedCategory) url.searchParams.set('communityCategory', state.communitySelectedCategory);
-    if (state.communitySelectedTag) url.searchParams.set('communityTag', state.communitySelectedTag);
     history[replace ? 'replaceState' : 'pushState']({}, '', `${url.pathname}${url.search}`);
   }
 
   function applyCatalogueParams(params = new URLSearchParams(window.location.search)) {
     state.query = params.get('q') || '';
-    const category = params.get('category') || params.get('topic') || '';
-    state.selectedCategory = DOC_TOPICS.includes(category) ? category : '';
-    const tag = params.get('tag') || '';
-    state.selectedTag = DOC_TAGS.find((value) => value.toLowerCase() === tag.toLowerCase()) || '';
-    const communityCategory = params.get('communityCategory') || '';
-    state.communitySelectedCategory = DOC_TOPICS.includes(communityCategory) ? communityCategory : '';
-    const communityTag = params.get('communityTag') || '';
-    state.communitySelectedTag = DOC_TAGS.find((value) => value.toLowerCase() === communityTag.toLowerCase()) || '';
+    const topic = params.get('topic') || '';
+    state.selectedTopic = DOC_TOPICS.find((value) => value.toLowerCase() === topic.toLowerCase()) || '';
+    const category = params.get('category') || '';
+    state.selectedCategory = DOC_CATEGORIES.find((value) => value.toLowerCase() === category.toLowerCase()) || '';
     if ($('#docs-search')) $('#docs-search').value = state.query;
   }
 
@@ -423,27 +392,26 @@
     renderTopics();
     const search = state.query.trim().toLowerCase();
     const matches = state.allDocuments.filter((item) => {
-      if (state.selectedCategory && getTopic(item) !== state.selectedCategory) return false;
-      if (state.selectedTag && !getTags(item).some((tag) => tag.toLowerCase() === state.selectedTag.toLowerCase())) return false;
+      if (state.selectedTopic && getTopic(item) !== state.selectedTopic) return false;
+      if (state.selectedCategory && !getCategories(item).some((category) => category.toLowerCase() === state.selectedCategory.toLowerCase())) return false;
       if (!search) return true;
-      const haystack = [item.title, item.summary, item.content, item.category, item.authorDisplayName, ...getTags(item)].join(' ').toLowerCase();
+      const haystack = [item.title, item.summary, item.content, getTopic(item), item.authorDisplayName, ...getCategories(item)].join(' ').toLowerCase();
       return haystack.includes(search);
     });
     const official = matches.filter((item) => getSource(item) === 'official')
       .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0) || String(a.title || '').localeCompare(String(b.title || '')));
-    const community = sortDocuments(matches.filter((item) => getSource(item) !== 'official').filter((item) => {
-      if (state.communitySelectedCategory && getTopic(item) !== state.communitySelectedCategory) return false;
-      if (state.communitySelectedTag && !getTags(item).some((tag) => tag.toLowerCase() === state.communitySelectedTag.toLowerCase())) return false;
-      return true;
-    }), state.sort.community);
-    const anyFilter = Boolean(state.query || state.selectedCategory || state.selectedTag || state.communitySelectedCategory || state.communitySelectedTag);
+    const community = sortDocuments(matches.filter((item) => getSource(item) !== 'official'), state.sort.community);
+    const anyFilter = Boolean(state.query || state.selectedTopic || state.selectedCategory);
     $('#docs-result-count').textContent = `${formatNumber(official.length + community.length)} document${official.length + community.length === 1 ? '' : 's'}${anyFilter ? ' found' : ' available'}`;
-    $('#clear-search-button').hidden = !anyFilter;
-    $('#reset-search-button').hidden = !anyFilter;
+    // Keep one clear button inside the search field and a separate reset control for all filters.
+    const searchClearButton = $('#clear-search-button');
+    const resetFiltersButton = $('#reset-search-button');
+    if (searchClearButton) searchClearButton.hidden = !state.query.trim();
+    if (resetFiltersButton) resetFiltersButton.hidden = !anyFilter;
     $('#official-count').textContent = `${formatNumber(official.length)} official`;
     $('#community-count').textContent = `${formatNumber(community.length)} community`;
-    $('#official-docs-list').innerHTML = official.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">No official documents match the current search or general filters.</div>';
-    $('#community-docs-list').innerHTML = community.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">No community documents match these filters yet.</div>';
+    $('#official-docs-list').innerHTML = official.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">No official documents match the current search or filters.</div>';
+    $('#community-docs-list').innerHTML = community.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">No community documents match the current search or filters.</div>';
     $('#docs-empty-state').hidden = official.length + community.length !== 0;
   }
 
@@ -453,12 +421,11 @@
     try {
       const data = await api('/api/docs');
       state.allDocuments = Array.isArray(data.documents) ? data.documents : [];
-      // Keep the full predefined filter list available, including topics with zero documents.
-      state.categories = DOC_TOPICS;
+      // Keep all predefined topics and categories visible even when no document uses them yet.
       renderCatalogue();
     } catch (error) {
-      state.allDocuments = []; state.categories = DOC_TOPICS;
-      // Filters are predefined, so all selectable topics and tags remain visible even if the API is offline.
+      state.allDocuments = [];
+      // Filters are predefined, so all selectable topics and categories remain visible even if the API is offline.
       renderTopics();
       $('#official-docs-list').innerHTML = '';
       $('#community-docs-list').innerHTML = '';
@@ -506,13 +473,13 @@
     state.pendingChange = pendingChange;
     updateShareMetadata(documentItem);
     const owner = Boolean(state.user && String(state.user.discordId) === String(documentItem.authorId || ''));
-    const category = documentItem.category || 'General';
+    const topic = getTopic(documentItem);
     const favoriteLabel = documentItem.favorite ? 'Saved to favorites' : 'Save to favorites';
     const vote = state.feedback.yourVote;
     const pendingNotice = pendingChange ? '<div class="docs-pending-note">You have edits waiting for administrator review. The published version is still shown to everyone.</div>' : '';
-    const detailTags = getTags(documentItem).map((tag) => `<button type="button" class="docs-tag" data-tag-filter="${escapeHtml(tag)}">#${escapeHtml(tag)}</button>`).join('');
+    const detailCategories = getCategories(documentItem).map((category) => `<button type="button" class="docs-category-chip" data-category-filter="${escapeHtml(category)}">${escapeHtml(category)}</button>`).join('');
     $('#detail-view').innerHTML = `
-      <div class="docs-detail-top"><a href="${basePath}/" class="docs-back-button" data-go-catalogue>← Back to all docs</a><span class="docs-topic-pill">${escapeHtml(category)}</span></div>
+      <div class="docs-detail-top"><a href="${basePath}/" class="docs-back-button" data-go-catalogue>← Back to all docs</a><span class="docs-topic-pill">${escapeHtml(topic)}</span></div>
       <div class="docs-reading-layout">
         <article class="docs-article">
           <header class="docs-article-header">
@@ -521,7 +488,7 @@
             <h1 class="docs-article-title">${escapeHtml(documentItem.title)}</h1>
             ${documentItem.summary ? `<p class="docs-article-summary">${escapeHtml(documentItem.summary)}</p>` : ''}
             <div class="docs-article-meta"><span>By <strong>${escapeHtml(documentItem.authorDisplayName || 'Unknown')}</strong></span><span aria-hidden="true">·</span><span>Published <strong>${escapeHtml(formatDate(documentItem.createdAt))}</strong></span><span aria-hidden="true">·</span><span>Last updated <strong>${escapeHtml(formatDate(documentItem.updatedAt || documentItem.createdAt))}</strong></span></div>
-            ${detailTags ? `<div class="docs-detail-tags" aria-label="Document tags">${detailTags}</div>` : ''}
+            ${detailCategories ? `<div class="docs-detail-categories" aria-label="Categories">${detailCategories}</div>` : ''}
             <div class="docs-article-actions">
               <button type="button" class="docs-action-button${documentItem.favorite ? ' is-active' : ''}" data-action="favorite-document" data-document-id="${escapeHtml(documentItem.documentId)}">☆ <span>${escapeHtml(favoriteLabel)}</span></button>
               ${owner && getSource(documentItem) !== 'official' ? `<button type="button" class="docs-action-button" data-action="edit-document" data-document-id="${escapeHtml(documentItem.documentId)}">✎ <span>Edit doc</span></button>` : ''}
@@ -564,7 +531,7 @@
     }
   }
   function navigateCatalogue(updateHistory = true) {
-    state.selectedCategory = ''; state.selectedTag = ''; state.query = ''; state.communitySelectedCategory = ''; state.communitySelectedTag = '';
+    state.selectedTopic = ''; state.selectedCategory = ''; state.query = '';
     resetShareMetadata();
     if ($('#docs-search')) $('#docs-search').value = '';
     setMode('catalogue'); if (updateHistory) history.pushState({}, '', `${basePath}/`); renderCatalogue(); window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -588,13 +555,13 @@
 
   function renderEditorChoices(documentItem = null) {
     const form = $('#doc-form');
-    const category = documentItem ? String(documentItem.category || 'Other') : '';
-    state.editorCategory = DOC_TOPICS.includes(category) ? category : (documentItem ? 'Other' : '');
-    state.editorTags = getTags(documentItem).filter((tag) => DOC_TAGS.includes(tag));
-    $('#doc-topic-options').innerHTML = DOC_TOPICS.map((topic) => `<label class="docs-choice-chip${state.editorCategory === topic ? ' is-selected' : ''}"><input type="radio" name="doc-topic-picker" value="${escapeHtml(topic)}"${state.editorCategory === topic ? ' checked' : ''} required><span>${escapeHtml(topic)}</span></label>`).join('');
-    $('#doc-tag-options').innerHTML = DOC_TAGS.map((tag) => `<label class="docs-choice-chip docs-choice-tag${state.editorTags.includes(tag) ? ' is-selected' : ''}"><input type="checkbox" name="doc-tag-picker" value="${escapeHtml(tag)}"${state.editorTags.includes(tag) ? ' checked' : ''}><span>${escapeHtml(tag)}</span></label>`).join('');
-    form.elements.category.value = state.editorCategory;
-    form.elements.tags.value = state.editorTags.join(', ');
+    const topicValue = documentItem ? String(documentItem.topic || 'Other') : '';
+    state.editorTopic = DOC_TOPICS.includes(topicValue) ? topicValue : (documentItem ? 'Other' : '');
+    state.editorCategories = getCategories(documentItem).filter((value) => DOC_CATEGORIES.includes(value));
+    $('#doc-topic-options').innerHTML = DOC_TOPICS.map((topic) => `<label class="docs-choice-chip${state.editorTopic === topic ? ' is-selected' : ''}"><input type="radio" name="doc-topic-picker" value="${escapeHtml(topic)}"${state.editorTopic === topic ? ' checked' : ''} required><span>${escapeHtml(topic)}</span></label>`).join('');
+    $('#doc-category-options').innerHTML = DOC_CATEGORIES.map((category) => `<label class="docs-choice-chip docs-choice-category${state.editorCategories.includes(category) ? ' is-selected' : ''}"><input type="checkbox" name="doc-category-picker" value="${escapeHtml(category)}"${state.editorCategories.includes(category) ? ' checked' : ''}><span>${escapeHtml(category)}</span></label>`).join('');
+    form.elements.topic.value = state.editorTopic;
+    form.elements.categories.value = state.editorCategories.join(', ');
   }
 
   function openDocForm(mode, documentItem = null) {
@@ -634,26 +601,28 @@
     const form = event.currentTarget, errorBox = $('#doc-form-error'), submitButton = $('#doc-form-submit');
     const oldHtml = submitButton.innerHTML;
     errorBox.hidden = true;
-    $('#doc-tags-error').hidden = true; $('#doc-tag-choice-field').removeAttribute('aria-invalid');
+    $('#doc-categories-error').hidden = true; $('#doc-category-choice-field').removeAttribute('aria-invalid');
     const topicChoice = $('input[name="doc-topic-picker"]:checked', form);
     if (!topicChoice) { errorBox.textContent = 'Choose a topic before saving.'; errorBox.hidden = false; return; }
     const selectedTopic = topicChoice.value;
-    const selectedTags = $$('input[name="doc-tag-picker"]:checked', form).map((input) => input.value);
-    form.elements.category.value = selectedTopic;
-    form.elements.tags.value = selectedTags.join(', ');
+    const selectedCategories = $$('input[name="doc-category-picker"]:checked', form).map((input) => input.value);
+    form.elements.topic.value = selectedTopic;
+    form.elements.categories.value = selectedCategories.join(', ');
     const mode = state.editorMode;
     const fields = {
-      title: form.elements.title.value.trim(), category: selectedTopic, tags: selectedTags,
+      title: form.elements.title.value.trim(), topic: selectedTopic, categories: selectedCategories,
       summary: form.elements.summary.value.trim(), coverImage: form.elements.coverImage.value.trim(), content: form.elements.content.value.trim()
     };
-    if (selectedTags.length === 0) {
-      $('#doc-tags-error').hidden = false; $('#doc-tag-choice-field').setAttribute('aria-invalid', 'true');
-      errorBox.textContent = 'Choose at least one tag before saving.'; errorBox.hidden = false; return;
+    if (selectedCategories.length === 0) {
+      $('#doc-categories-error').hidden = false; $('#doc-category-choice-field').setAttribute('aria-invalid', 'true');
+      errorBox.textContent = 'Choose at least one category before saving.'; errorBox.hidden = false; return;
     }
+    if (fields.title.length < 2) { errorBox.textContent = 'A title of at least 2 characters is required.'; errorBox.hidden = false; form.elements.title.focus(); return; }
     if (fields.summary.length < 10) {
       form.elements.summary.setCustomValidity('Add a summary of at least 10 characters.'); form.elements.summary.reportValidity(); form.elements.summary.setCustomValidity('');
       errorBox.textContent = 'A summary of at least 10 characters is required.'; errorBox.hidden = false; return;
     }
+    if (fields.content.length < 10) { errorBox.textContent = 'Markdown content must contain at least 10 characters.'; errorBox.hidden = false; form.elements.content.focus(); return; }
     if (fields.coverImage && !safeHttpsUrl(fields.coverImage)) {
       form.elements.coverImage.setCustomValidity('Enter a valid HTTPS image URL.'); form.elements.coverImage.reportValidity(); form.elements.coverImage.setCustomValidity('');
       errorBox.textContent = 'Cover image must be a valid HTTPS URL.'; errorBox.hidden = false; return;
@@ -665,7 +634,6 @@
       let response;
       if (mode === 'submission' || mode === 'edit') {
         if (mode === 'edit') fields.documentId = state.editorDocumentId;
-        // The backend decides source from request type/document. Normal users cannot choose Official.
         response = await api('/api/docs/submissions', { method: 'POST', body: fields });
       } else if (mode === 'admin-create') {
         response = await api('/api/docs/admin/documents', { method: 'POST', body: fields });
@@ -676,7 +644,6 @@
       if (mode.startsWith('admin-')) {
         await loadAdminDashboard(false); await loadCatalogue(); setMode('admin'); renderAdmin();
       } else {
-        // Send the contributor straight to My Library, focused on the new pending request.
         history.pushState({}, '', `${basePath}/?library=pending`);
         await openLibrary({ focusPending: true });
       }
@@ -730,8 +697,8 @@
   function pendingSubmissionCard(request) {
     const fields = request.fields || request.document || request;
     const item = { ...fields, title: fields.title || request.title || 'Untitled submission',
-      summary: fields.summary || request.summary || '', category: fields.category || request.category || 'Other',
-      tags: fields.tags || request.tags || [], authorDisplayName: request.authorDisplayName || state.user?.displayName,
+      summary: fields.summary || request.summary || '', topic: fields.topic || request.topic || 'Other',
+      categories: fields.categories || request.categories || [], authorDisplayName: request.authorDisplayName || state.user?.displayName,
       createdAt: request.createdAt || request.submittedAt, source: 'community' };
     return `<div class="docs-pending-library-item">${cardMarkup(item, { pending: true })}<div class="docs-pending-item-actions"><button class="docs-small-button" type="button" data-action="toggle-library-pending-preview" data-request-id="${escapeHtml(request.requestId || request._id || '')}">Preview submission</button><span class="docs-status-pill">Pending for approval</span></div><div class="docs-pending-preview docs-markdown" data-pending-preview="${escapeHtml(request.requestId || request._id || '')}" hidden><h3>${escapeHtml(item.title)}</h3>${renderMarkdown(item.content || '', 'docs-pending-preview-content')}</div></div>`;
   }
@@ -770,17 +737,18 @@
     const officialDocuments = documents.filter((item) => getSource(item) === 'official').sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0) || String(a.title).localeCompare(String(b.title)));
     const communityDocuments = documents.filter((item) => getSource(item) !== 'official').sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
     const requests = data.requests || [];
-    const categories = new Set(documents.map((item) => item.category).filter(Boolean));
+    const topics = new Set(documents.map((item) => getTopic(item)).filter(Boolean));
+    const categoriesUsed = new Set(documents.flatMap((item) => getCategories(item)));
     const requestRows = requests.map((request) => {
       const fields = request.fields || {};
       const typeLabel = request.requestType === 'edit' ? 'EDIT REQUEST' : 'NEW SUBMISSION';
-      return `<article class="docs-admin-row docs-request-row"><div class="docs-admin-row-main"><strong>${escapeHtml(fields.title || 'Untitled submission')}</strong><p>${escapeHtml(fields.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${typeLabel}</span><span>By ${escapeHtml(request.authorDisplayName || 'Unknown')}</span><span>Submitted ${escapeHtml(formatDate(request.createdAt))}</span>${fields.category ? `<span>${escapeHtml(fields.category)}</span>` : ''}<span>Community</span></div></div><div class="docs-admin-row-actions"><button class="docs-small-button" type="button" data-action="toggle-request-preview">Preview</button><button class="docs-small-button" type="button" data-action="approve-request" data-request-id="${escapeHtml(request.requestId)}">Approve</button><button class="docs-small-button" type="button" data-action="reject-request" data-request-id="${escapeHtml(request.requestId)}">Reject</button></div><div class="docs-request-preview" hidden><div class="docs-admin-row-meta">${(fields.tags || []).map((tag) => `<span>#${escapeHtml(tag)}</span>`).join('')}</div>${renderMarkdown(fields.content || '', 'docs-request-markdown')}</div></article>`;
+      return `<article class="docs-admin-row docs-request-row"><div class="docs-admin-row-main"><strong>${escapeHtml(fields.title || 'Untitled submission')}</strong><p>${escapeHtml(fields.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${typeLabel}</span><span>By ${escapeHtml(request.authorDisplayName || 'Unknown')}</span><span>Submitted ${escapeHtml(formatDate(request.createdAt))}</span>${fields.topic ? `<span>${escapeHtml(fields.topic)}</span>` : ''}<span>Community</span></div></div><div class="docs-admin-row-actions"><button class="docs-small-button" type="button" data-action="toggle-request-preview">Preview</button><button class="docs-small-button" type="button" data-action="approve-request" data-request-id="${escapeHtml(request.requestId)}">Approve</button><button class="docs-small-button" type="button" data-action="reject-request" data-request-id="${escapeHtml(request.requestId)}">Reject</button></div><div class="docs-request-preview" hidden><div class="docs-admin-row-meta">${(fields.categories || []).map((category) => `<span>${escapeHtml(category)}</span>`).join('')}</div>${renderMarkdown(fields.content || '', 'docs-request-markdown')}</div></article>`;
     }).join('');
-    const officialRows = officialDocuments.map((item, index) => `<article class="docs-admin-row"><div class="docs-admin-row-main"><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${escapeHtml(item.category || 'Other')}</span><span>Official</span><span>Visibility: ${item.visibility === 'private' ? 'Private' : 'Public'}</span><span>Updated ${escapeHtml(formatDate(item.updatedAt || item.createdAt))}</span><span>Official order ${index + 1}</span></div></div><div class="docs-admin-row-actions"><div class="docs-order-buttons"><button type="button" data-action="move-doc" data-document-id="${escapeHtml(item.documentId)}" data-delta="-1" aria-label="Move up" ${index === 0 ? 'disabled' : ''}>↑</button><button type="button" data-action="move-doc" data-document-id="${escapeHtml(item.documentId)}" data-delta="1" aria-label="Move down" ${index === officialDocuments.length - 1 ? 'disabled' : ''}>↓</button></div><button type="button" class="docs-small-button" data-action="edit-admin-document" data-document-id="${escapeHtml(item.documentId)}">Edit</button><button type="button" class="docs-small-button" data-action="delete-admin-document" data-document-id="${escapeHtml(item.documentId)}">Delete</button></div></article>`).join('');
-    const communityRows = communityDocuments.map((item) => `<article class="docs-admin-row"><div class="docs-admin-row-main"><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${escapeHtml(item.category || 'Other')}</span><span>Community</span><span>Visibility: ${item.visibility === 'private' ? 'Private' : 'Public'}</span><span>Updated ${escapeHtml(formatDate(item.updatedAt || item.createdAt))}</span><span>${formatNumber(getViews(item))} views</span></div></div><div class="docs-admin-row-actions"><button type="button" class="docs-small-button" data-action="edit-admin-document" data-document-id="${escapeHtml(item.documentId)}">Edit</button><button type="button" class="docs-small-button" data-action="delete-admin-document" data-document-id="${escapeHtml(item.documentId)}">Delete</button></div></article>`).join('');
+    const officialRows = officialDocuments.map((item, index) => `<article class="docs-admin-row"><div class="docs-admin-row-main"><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${escapeHtml(getTopic(item))}</span><span>Official</span><span>Visibility: ${item.visibility === 'private' ? 'Private' : 'Public'}</span><span>Updated ${escapeHtml(formatDate(item.updatedAt || item.createdAt))}</span><span>Official order ${index + 1}</span></div></div><div class="docs-admin-row-actions"><div class="docs-order-buttons"><button type="button" data-action="move-doc" data-document-id="${escapeHtml(item.documentId)}" data-delta="-1" aria-label="Move up" ${index === 0 ? 'disabled' : ''}>↑</button><button type="button" data-action="move-doc" data-document-id="${escapeHtml(item.documentId)}" data-delta="1" aria-label="Move down" ${index === officialDocuments.length - 1 ? 'disabled' : ''}>↓</button></div><button type="button" class="docs-small-button" data-action="edit-admin-document" data-document-id="${escapeHtml(item.documentId)}">Edit</button><button type="button" class="docs-small-button" data-action="delete-admin-document" data-document-id="${escapeHtml(item.documentId)}">Delete</button></div></article>`).join('');
+    const communityRows = communityDocuments.map((item) => `<article class="docs-admin-row"><div class="docs-admin-row-main"><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${escapeHtml(getTopic(item))}</span><span>Community</span><span>Visibility: ${item.visibility === 'private' ? 'Private' : 'Public'}</span><span>Updated ${escapeHtml(formatDate(item.updatedAt || item.createdAt))}</span><span>${formatNumber(getViews(item))} views</span></div></div><div class="docs-admin-row-actions"><button type="button" class="docs-small-button" data-action="edit-admin-document" data-document-id="${escapeHtml(item.documentId)}">Edit</button><button type="button" class="docs-small-button" data-action="delete-admin-document" data-document-id="${escapeHtml(item.documentId)}">Delete</button></div></article>`).join('');
     $('#admin-view').innerHTML = `
       <header class="docs-page-heading"><div><div class="kicker">EDITORIAL WORKSPACE</div><h2 id="admin-heading">Documents admin</h2><p>Review community submissions, manage official references, and control published visibility.</p></div><div class="docs-heading-actions"><button class="docs-back-button" type="button" data-go-catalogue>← Back to all docs</button><button class="docs-small-button docs-primary-small" type="button" data-action="new-admin-document">＋ New document</button></div></header>
-      <div class="docs-admin-summary"><div class="docs-admin-stat"><span>Published documents</span><strong>${formatNumber(documents.length)}</strong></div><div class="docs-admin-stat"><span>Waiting for review</span><strong>${formatNumber(requests.length)}</strong></div><div class="docs-admin-stat"><span>Topics used</span><strong>${formatNumber(categories.size)}</strong></div></div>
+      <div class="docs-admin-summary"><div class="docs-admin-stat"><span>Published documents</span><strong>${formatNumber(documents.length)}</strong></div><div class="docs-admin-stat"><span>Waiting for review</span><strong>${formatNumber(requests.length)}</strong></div><div class="docs-admin-stat"><span>Topics / categories</span><strong>${formatNumber(topics.size)} / ${formatNumber(categoriesUsed.size)}</strong></div></div>
       <section class="docs-admin-section docs-admin-review"><div class="docs-admin-section-header"><div><h3>Community submissions &amp; suggested edits</h3><p>New submissions are always reviewed as Community Docs; official documents are published by administrators.</p></div></div><div class="docs-admin-rows">${requestRows || '<div class="docs-inline-empty">The review queue is clear. No submissions are waiting.</div>'}</div></section>
       <section class="docs-admin-section"><div class="docs-admin-section-header"><div><h3>Pancake Official Documentation <span class="docs-count-pill">${officialDocuments.length}</span></h3><p>These documents keep a fixed public order. Use the arrows to arrange them; Community Docs can be sorted separately.</p></div><button class="docs-small-button" type="button" data-action="refresh-admin">Refresh</button></div><div class="docs-admin-rows">${officialRows || '<div class="docs-inline-empty">No official documents published yet.</div>'}</div></section>
       <section class="docs-admin-section"><div class="docs-admin-section-header"><div><h3>Community Docs <span class="docs-count-pill">${communityDocuments.length}</span></h3><p>These documents are shown in the public gallery and can be sorted by visitors.</p></div></div><div class="docs-admin-rows">${communityRows || '<div class="docs-inline-empty">No community documents published yet.</div>'}</div></section>
@@ -853,24 +821,14 @@
       if (scrollToSection(id)) { event.preventDefault(); return; }
     }
 
-    const communityTagFilter = target.closest('[data-community-tag-filter]');
-    if (communityTagFilter) {
-      event.preventDefault(); state.communitySelectedTag = communityTagFilter.dataset.communityTagFilter || '';
-      resetShareMetadata(); setMode('catalogue'); syncCatalogueUrl(); renderCatalogue(); return;
-    }
-    const communityTopicFilter = target.closest('[data-community-topic-filter]');
-    if (communityTopicFilter) {
-      event.preventDefault(); state.communitySelectedCategory = communityTopicFilter.dataset.communityTopicFilter || '';
-      resetShareMetadata(); setMode('catalogue'); syncCatalogueUrl(); renderCatalogue(); return;
-    }
-    const tagFilter = target.closest('[data-tag-filter]');
-    if (tagFilter) {
-      event.preventDefault(); state.selectedTag = tagFilter.dataset.tagFilter || '';
+    const categoryFilter = target.closest('[data-category-filter]');
+    if (categoryFilter) {
+      event.preventDefault(); state.selectedCategory = categoryFilter.dataset.categoryFilter || '';
       resetShareMetadata(); setMode('catalogue'); syncCatalogueUrl(); renderCatalogue(); return;
     }
     const topicFilter = target.closest('[data-topic-filter]');
     if (topicFilter) {
-      event.preventDefault(); state.selectedCategory = topicFilter.dataset.topicFilter || '';
+      event.preventDefault(); state.selectedTopic = topicFilter.dataset.topicFilter || '';
       resetShareMetadata(); setMode('catalogue'); syncCatalogueUrl(); renderCatalogue(); return;
     }
     const docLink = target.closest('[data-open-doc]');
@@ -896,8 +854,16 @@
       state.accessToken = ''; state.user = null; state.canAccessAdmin = false; state.adminUnlocked = false; saveAccessToken(''); updateAccountButtons();
       navigateCatalogue(); await loadCatalogue(); notify('You have been signed out.'); return;
     }
-    if (target.closest('#clear-search-button, #reset-search-button, [data-reset-filters]')) {
-      state.query = ''; state.selectedCategory = ''; state.selectedTag = ''; state.communitySelectedCategory = ''; state.communitySelectedTag = ''; $('#docs-search').value = '';
+    if (target.closest('#clear-search-button')) {
+      state.query = '';
+      $('#docs-search').value = '';
+      syncCatalogueUrl();
+      renderCatalogue();
+      return;
+    }
+    if (target.closest('#reset-search-button, [data-reset-filters]')) {
+      state.query = ''; state.selectedTopic = ''; state.selectedCategory = '';
+      $('#docs-search').value = '';
       resetShareMetadata(); setMode('catalogue'); syncCatalogueUrl(); renderCatalogue(); return;
     }
     if (target.closest('#retry-docs-button')) { await loadCatalogue(); return; }
@@ -906,19 +872,6 @@
       $('#toggle-markdown-preview').textContent = state.previewVisible ? 'Hide Markdown preview ↑' : 'Preview Markdown ↗';
       if (state.previewVisible) $('#markdown-preview').innerHTML = renderMarkdown($('#doc-form').elements.content.value, 'docs-preview-content'); return;
     }
-    const choiceInput = target.closest('input[name="doc-topic-picker"], input[name="doc-tag-picker"]');
-    if (choiceInput) {
-      if (choiceInput.name === 'doc-topic-picker') {
-        state.editorCategory = choiceInput.value;
-        $('#doc-topic-options').querySelectorAll('.docs-choice-chip').forEach((chip) => chip.classList.toggle('is-selected', chip.contains(choiceInput) ? choiceInput.checked : Boolean($('input', chip)?.checked)));
-        $('#doc-form').elements.category.value = choiceInput.value;
-      } else {
-        state.editorTags = $$('input[name="doc-tag-picker"]:checked', $('#doc-form')).map((input) => input.value);
-        choiceInput.closest('.docs-choice-chip')?.classList.toggle('is-selected', choiceInput.checked);
-        $('#doc-form').elements.tags.value = state.editorTags.join(', ');
-      }
-    }
-
     const actionButton = target.closest('[data-action]');
     if (!actionButton) return;
     const action = actionButton.dataset.action, documentId = actionButton.dataset.documentId;
@@ -972,12 +925,12 @@
     const input = event.target;
     if (!(input instanceof HTMLInputElement)) return;
     if (input.name === 'doc-topic-picker') {
-      state.editorCategory = input.value;
-      $('#doc-form').elements.category.value = input.value;
+      state.editorTopic = input.value;
+      $('#doc-form').elements.topic.value = input.value;
       $('#doc-topic-options').querySelectorAll('.docs-choice-chip').forEach((chip) => chip.classList.toggle('is-selected', Boolean($('input', chip)?.checked)));
-    } else if (input.name === 'doc-tag-picker') {
-      state.editorTags = $$('input[name="doc-tag-picker"]:checked', $('#doc-form')).map((item) => item.value);
-      $('#doc-form').elements.tags.value = state.editorTags.join(', ');
+    } else if (input.name === 'doc-category-picker') {
+      state.editorCategories = $$('input[name="doc-category-picker"]:checked', $('#doc-form')).map((item) => item.value);
+      $('#doc-form').elements.categories.value = state.editorCategories.join(', ');
       input.closest('.docs-choice-chip')?.classList.toggle('is-selected', input.checked);
     }
   });
