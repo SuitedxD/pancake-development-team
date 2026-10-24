@@ -62,7 +62,7 @@
           <input id="docs-search" type="search" aria-label="Search documents" placeholder="Search docs, topics, categories, or keywords…" autocomplete="off" />
           <button class="docs-search-clear" id="clear-search-button" type="button" hidden aria-label="Clear search">×</button>
         </div>
-        <div class="docs-search-caption"><span id="docs-result-count">Loading documents…</span><span>Markdown-powered · Community maintained</span></div>
+        <div class="docs-search-caption"><span id="docs-result-count">Loading documents…</span></div>
       </div>
     </section>
 
@@ -70,7 +70,7 @@
       <div class="shell docs-main-shell">
         <section class="docs-catalogue" id="catalogue-view" aria-labelledby="catalogue-heading">
           <div class="docs-section-heading">
-            <div><div class="kicker">EXPLORE THE KNOWLEDGE BASE</div><h2 id="catalogue-heading">Find your answer.</h2><p>Browse official references or community-written guides.</p></div>
+            <div><div class="kicker">EXPLORE THE KNOWLEDGE BASE</div><h2 id="catalogue-heading">Find your answer</h2><p>Browse official references or community-written guides.</p></div>
             <button class="docs-text-button" id="reset-search-button" type="button" hidden>Reset filters <span aria-hidden="true">×</span></button>
           </div>
           <div class="docs-catalog-layout">
@@ -88,7 +88,7 @@
                 <div id="official-docs-list" class="docs-list" aria-live="polite"><div class="docs-loading"><span class="docs-loader" aria-hidden="true"></span><span>Gathering official documents…</span></div></div>
               </section>
               <section class="docs-collection docs-community-collection" aria-labelledby="community-docs-heading">
-                <div class="docs-collection-heading"><div><div class="kicker">WRITTEN BY THE COMMUNITY</div><h2 id="community-docs-heading">Community Documents</h2><p>Practical walkthroughs, tips, and guides from Pancake users.</p></div><div class="docs-collection-tools"><span class="docs-count-pill" id="community-count">0</span><label class="docs-sort-wrap"><span>Sort</span><select id="community-sort" aria-label="Sort community documentation"><option value="newest">Recently added</option><option value="views">Most viewed</option><option value="helpful">Most helpful</option><option value="az">Name A–Z</option></select></label></div></div>
+                <div class="docs-collection-heading"><div><h2 id="community-docs-heading">Community Documents</h2><p>Practical walkthroughs, tips, and guides from Pancake users.</p></div><div class="docs-collection-tools"><span class="docs-count-pill" id="community-count">0</span><label class="docs-sort-wrap"><span>Sort</span><select id="community-sort" aria-label="Sort community documentation"><option value="newest">Recently added</option><option value="views">Most viewed</option><option value="helpful">Most helpful</option><option value="az">Name A–Z</option></select></label></div></div>
                 <div id="community-docs-list" class="docs-list" aria-live="polite"><div class="docs-loading"><span class="docs-loader" aria-hidden="true"></span><span>Gathering community documents…</span></div></div>
               </section>
               <div id="docs-empty-state" class="docs-empty-state" hidden><span class="docs-empty-mark" aria-hidden="true">⌕</span><h3>No documents found</h3><p>Try another search, category, or topic.</p><button class="docs-small-button" type="button" data-reset-filters>Reset filters</button></div>
