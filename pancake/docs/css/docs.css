@@ -396,3 +396,59 @@
   .docs-hero-icon, .docs-hero-icon::before, .docs-hero-icon img, .docs-loader { animation: none !important; }
   .docs-card, .docs-small-button, .docs-tag { transition: none !important; }
 }
+
+
+/* Final Docs information architecture: official references are curated in a compact horizontal grid; community docs use a flexible gallery. */
+.docs-fixed-order-label { color: #8d867b; font-size: 10px; white-space: nowrap; }
+.docs-collection-heading { align-items: flex-end; }
+.docs-official-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+#official-docs-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; gap: 12px; }
+#official-docs-list .docs-card { display: flex; align-items: flex-start; min-height: 100%; padding: 17px; }
+#official-docs-list .docs-card-main { display: flex; flex-direction: column; align-items: flex-start; width: 100%; }
+#official-docs-list .docs-card h3 { margin-top: 10px; }
+#official-docs-list .docs-card-footer { margin-top: auto; padding-top: 14px; }
+#community-docs-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; gap: 12px; }
+#community-docs-list .docs-card { display: flex; min-height: 100%; padding: 16px; }
+#community-docs-list .docs-card-main { display: flex; flex-direction: column; align-items: flex-start; width: 100%; }
+#community-docs-list .docs-card-footer { margin-top: auto; padding-top: 13px; }
+#community-docs-list .docs-card-tags { max-width: 100%; }
+.docs-choice-field { min-width: 0; margin: 0; padding: 13px; border: 1px solid var(--docs-border); border-radius: 11px; }
+.docs-choice-field legend { padding: 0 6px; color: #e5dfd5; font-size: 11px; font-weight: 850; }
+.docs-choice-required, .docs-choice-hint { margin-left: 7px; color: #8d867b; font-size: 9px; font-weight: 500; }
+.docs-choice-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+.docs-choice-chip { position: relative; display: inline-flex; cursor: pointer; }
+.docs-choice-chip input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.docs-choice-chip span { display: inline-flex; align-items: center; min-height: 31px; padding: 0 10px; border: 1px solid rgba(255,255,255,.11); border-radius: 8px; color: #aaa398; background: rgba(255,255,255,.025); font-size: 10px; transition: color .16s ease, background .16s ease, border-color .16s ease; }
+.docs-choice-chip:hover span, .docs-choice-chip:focus-within span { border-color: rgba(255,212,102,.45); color: #f6e5b2; }
+.docs-choice-chip.is-selected span, .docs-choice-chip input:checked + span { border-color: var(--docs-accent); color: #17140c; background: var(--docs-accent); }
+.docs-choice-chip input:focus-visible + span { outline: 2px solid var(--docs-accent); outline-offset: 3px; }
+.docs-library-heading { align-items: flex-start; }
+.docs-library-heading h2 { margin-top: 8px; }
+.docs-library-heading p { max-width: 640px; }
+.docs-library-section { scroll-margin-top: 92px; }
+.docs-pending-library-item { min-width: 0; }
+.docs-pending-item-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.docs-pending-preview { padding: 14px; border: 1px solid var(--docs-border); border-radius: 10px; background: rgba(255,255,255,.02); }
+.docs-pending-preview h3 { margin: 0 0 10px; color: #f1ede4; font-size: 14px; }
+.docs-admin-section + .docs-admin-section { margin-top: 22px; }
+.docs-admin-section .docs-admin-row-meta { gap: 7px 12px; }
+.docs-admin-status { line-height: 1.7; }
+
+@media (max-width: 1000px) {
+  #community-docs-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  #official-docs-list, #community-docs-list { grid-template-columns: minmax(0, 1fr); }
+  .docs-collection-heading { align-items: flex-start; flex-direction: column; }
+  .docs-collection-tools { width: 100%; justify-content: space-between; }
+  .docs-choice-field { padding: 10px; }
+  .docs-choice-grid { gap: 6px; }
+  .docs-choice-chip span { min-height: 29px; padding: 0 8px; }
+  .docs-library-heading { align-items: flex-start; flex-direction: column; }
+}
+
+
+/* Select styling for the admin-only visibility control and helper copy below chip lists. */
+.docs-field select { display: block; width: 100%; min-width: 0; min-height: 40px; border: 1px solid rgba(255,255,255,.13); border-radius: 9px; padding: 10px 12px; outline: 0; color: #f2ede3; background: #151516; font: inherit; font-size: 12px; }
+.docs-field select:focus { border-color: rgba(255,212,102,.48); box-shadow: 0 0 0 3px rgba(255,212,102,.06); }
+.docs-choice-field > small { display: block; margin-top: 9px; color: #827b72; font-size: 9px; line-height: 1.6; }

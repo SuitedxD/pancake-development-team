@@ -6,6 +6,8 @@
   const accessTokenKey = 'pancakePluginPortalAccessToken';
   const viewerKey = 'pancakeDocsViewerId';
   const defaultSocialImage = 'https://suitedxd.github.io/pancake-development-team/assets/pancake/pancake-social_02.png';
+  const DOC_TOPICS = ['Getting Started', 'Installation', 'Configuration', 'Commands', 'Moderation', 'Administration', 'Permissions', 'Roles', 'Plugins', 'Plugin Development', 'Automation', 'Integrations', 'Troubleshooting', 'FAQs', 'Server Setup', 'Dashboard', 'Security', 'Events', 'Music & Media', 'Economy', 'Levels & XP', 'Logging', 'Webhooks', 'API & Developers', 'Customization', 'Other'];
+  const DOC_TAGS = ['Setup', 'Beginner', 'Advanced', 'Commands', 'Configuration', 'Permissions', 'Discord', 'Server Management', 'Moderation', 'Automation', 'Plugin', 'Admin', 'API', 'Integration', 'Troubleshooting', 'Examples', 'Guide', 'FAQ', 'Security', 'Tips', 'Customization', 'Performance', 'Updates', 'Logging', 'Markdown', 'Webhooks', 'Community', 'Official', 'Other'];
 
   function readAccessToken() {
     try { return localStorage.getItem(accessTokenKey) || ''; } catch { return ''; }
@@ -28,7 +30,8 @@
     accessToken: readAccessToken(), viewerId: getViewerId(), user: null, canAccessAdmin: false,
     adminUnlocked: false, currentMode: 'catalogue', allDocuments: [], categories: [],
     selectedCategory: '', selectedTag: '', query: '',
-    sort: { official: 'newest', community: 'newest' },
+    sort: { community: 'newest' },
+    editorCategory: 'Other', editorTags: [],
     selectedDocument: null, feedback: null, pendingChange: null,
     adminData: { documents: [], requests: [] }, editorMode: 'submission', editorDocumentId: '',
     editorOrder: 0, previewVisible: false
@@ -146,7 +149,7 @@
     $('#library-button').hidden = !state.user;
     $('#logout-button').hidden = !state.user;
     $('#admin-button').hidden = !(state.user && state.canAccessAdmin);
-    if (state.user) $('#library-button').innerHTML = `<span>My Library</span>`;
+    if (state.user) $('#library-button').innerHTML = `${avatarMarkup(state.user, 'docs-avatar docs-header-avatar')} <span>My Library</span>`;
   }
 
   async function refreshSession() {
@@ -310,7 +313,7 @@
   }
 
   function cardMarkup(item, { pending = false } = {}) {
-    const category = item.category || 'General';
+    const category = item.category || 'Other';
     const tags = getTags(item).slice(0, 6).map((tag) => `<button type="button" class="docs-tag${state.selectedTag.toLowerCase() === tag.toLowerCase() ? ' is-active' : ''}" data-tag-filter="${escapeHtml(tag)}" aria-pressed="${state.selectedTag.toLowerCase() === tag.toLowerCase()}">#${escapeHtml(tag)}</button>`).join('');
     const updatedDate = formatDate(item.updatedAt || item.createdAt);
     const source = getSource(item);
@@ -333,16 +336,17 @@
   function renderTopics() {
     const wrap = $('#docs-topic-filters');
     const allActive = state.selectedCategory === '';
-    const all = `<button class="docs-topic-button${allActive ? ' is-active' : ''}" data-topic="" type="button" aria-pressed="${allActive}">All topics <span>${formatNumber(state.allDocuments.length)}</span></button>`;
+    const all = `<button class="docs-topic-button${allActive ? ' is-active' : ''}" data-topic-filter="" type="button" aria-pressed="${allActive}">All topics <span>${formatNumber(state.allDocuments.length)}</span></button>`;
     const topics = state.categories.map((category) => {
       const active = state.selectedCategory === category;
       const count = state.allDocuments.filter((item) => item.category === category).length;
-      return `<button class="docs-topic-button${active ? ' is-active' : ''}" data-topic="${escapeHtml(category)}" type="button" aria-pressed="${active}">${escapeHtml(category)} <span>${formatNumber(count)}</span></button>`;
+      return `<button class="docs-topic-button${active ? ' is-active' : ''}" data-topic-filter="${escapeHtml(category)}" type="button" aria-pressed="${active}">${escapeHtml(category)} <span>${formatNumber(count)}</span></button>`;
     }).join('');
     wrap.innerHTML = all + topics;
     const uniqueTags = [...new Set(state.allDocuments.flatMap(getTags))].sort((a, b) => a.localeCompare(b));
     $('#docs-tag-filters').innerHTML = [`<button type="button" class="docs-topic-button docs-tag-filter${!state.selectedTag ? ' is-active' : ''}" data-tag-filter="" aria-pressed="${!state.selectedTag}">All tags</button>`, ...uniqueTags.map((tag) => `<button type="button" class="docs-topic-button docs-tag-filter${state.selectedTag.toLowerCase() === tag.toLowerCase() ? ' is-active' : ''}" data-tag-filter="${escapeHtml(tag)}" aria-pressed="${state.selectedTag.toLowerCase() === tag.toLowerCase()}">#${escapeHtml(tag)}</button>`)].join('');
   }
+
   function sortDocuments(items, sort) {
     const list = [...items];
     const dateValue = (item) => new Date(item.createdAt || item.updatedAt || 0).getTime() || 0;
@@ -361,13 +365,14 @@
       const haystack = [item.title, item.summary, item.content, item.category, item.authorDisplayName, ...getTags(item)].join(' ').toLowerCase();
       return haystack.includes(search);
     });
-    const official = sortDocuments(matches.filter((item) => getSource(item) === 'official'), state.sort.official);
+    const official = matches.filter((item) => getSource(item) === 'official')
+      .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0) || String(a.title || '').localeCompare(String(b.title || '')));
     const community = sortDocuments(matches.filter((item) => getSource(item) !== 'official'), state.sort.community);
     $('#docs-result-count').textContent = `${formatNumber(matches.length)} document${matches.length === 1 ? '' : 's'}${search || state.selectedCategory || state.selectedTag ? ' found' : ' available'}`;
     $('#clear-search-button').hidden = !state.query && !state.selectedCategory && !state.selectedTag;
     $('#reset-search-button').hidden = !state.query && !state.selectedCategory && !state.selectedTag;
-    $('#official-count').textContent = formatNumber(official.length);
-    $('#community-count').textContent = formatNumber(community.length);
+    $('#official-count').textContent = `${formatNumber(official.length)} official`;
+    $('#community-count').textContent = `${formatNumber(community.length)} community`;
     $('#official-docs-list').innerHTML = official.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">No official documents match these filters yet.</div>';
     $('#community-docs-list').innerHTML = community.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">No community documents match these filters yet.</div>';
     $('#docs-empty-state').hidden = matches.length !== 0;
@@ -441,7 +446,7 @@
             ${detailTags ? `<div class="docs-detail-tags" aria-label="Document tags">${detailTags}</div>` : ''}
             <div class="docs-article-actions">
               <button type="button" class="docs-action-button${documentItem.favorite ? ' is-active' : ''}" data-action="favorite-document" data-document-id="${escapeHtml(documentItem.documentId)}">☆ <span>${escapeHtml(favoriteLabel)}</span></button>
-              ${owner ? `<button type="button" class="docs-action-button" data-action="edit-document" data-document-id="${escapeHtml(documentItem.documentId)}">✎ <span>Edit doc</span></button>` : ''}
+              ${owner && getSource(documentItem) !== 'official' ? `<button type="button" class="docs-action-button" data-action="edit-document" data-document-id="${escapeHtml(documentItem.documentId)}">✎ <span>Edit doc</span></button>` : ''}
               <button type="button" class="docs-action-button" data-action="share-document" data-document-id="${escapeHtml(documentItem.documentId)}">↗ <span>Share link</span></button>
               <div class="docs-detail-metrics"><span><strong>${formatNumber(getViews(documentItem))}</strong> views</span><span><strong>${formatNumber(getUsefulCount(documentItem))}</strong> found this helpful</span></div>
             </div>
@@ -503,6 +508,17 @@
     callback();
   }
 
+  function renderEditorChoices(documentItem = null) {
+    const form = $('#doc-form');
+    const category = String(documentItem?.category || 'Other');
+    state.editorCategory = DOC_TOPICS.includes(category) ? category : 'Other';
+    state.editorTags = getTags(documentItem).filter((tag) => DOC_TAGS.includes(tag));
+    $('#doc-topic-options').innerHTML = DOC_TOPICS.map((topic) => `<label class="docs-choice-chip${state.editorCategory === topic ? ' is-selected' : ''}"><input type="radio" name="doc-topic-picker" value="${escapeHtml(topic)}"${state.editorCategory === topic ? ' checked' : ''} required><span>${escapeHtml(topic)}</span></label>`).join('');
+    $('#doc-tag-options').innerHTML = DOC_TAGS.map((tag) => `<label class="docs-choice-chip docs-choice-tag${state.editorTags.includes(tag) ? ' is-selected' : ''}"><input type="checkbox" name="doc-tag-picker" value="${escapeHtml(tag)}"${state.editorTags.includes(tag) ? ' checked' : ''}><span>${escapeHtml(tag)}</span></label>`).join('');
+    form.elements.category.value = state.editorCategory;
+    form.elements.tags.value = state.editorTags.join(', ');
+  }
+
   function openDocForm(mode, documentItem = null) {
     if (!state.user && mode !== 'admin-create' && mode !== 'admin-edit') { login(); return; }
     state.editorMode = mode; state.editorDocumentId = documentItem?.documentId || '';
@@ -510,22 +526,24 @@
     const form = $('#doc-form'); form.reset(); $('#doc-form-error').hidden = true; $('#markdown-preview').hidden = true;
     $('#toggle-markdown-preview').textContent = 'Preview Markdown ↗';
     form.elements.title.value = documentItem?.title || '';
-    form.elements.category.value = documentItem?.category || '';
-    form.elements.tags.value = getTags(documentItem).join(', ');
     form.elements.summary.value = documentItem?.summary || '';
     form.elements.content.value = documentItem?.content || '';
+    renderEditorChoices(documentItem);
     const sourceField = $('#doc-source-field');
     sourceField.hidden = !mode.startsWith('admin-');
     if (form.elements.source) form.elements.source.value = documentItem ? getSource(documentItem) : 'official';
+    const visibilityField = $('#doc-visibility-field');
+    visibilityField.hidden = mode !== 'admin-edit';
+    if (form.elements.visibility) form.elements.visibility.value = documentItem?.visibility === 'private' ? 'private' : 'public';
     const title = mode === 'edit' ? 'Suggest edits' : mode === 'admin-create' ? 'Create a document' : mode === 'admin-edit' ? 'Edit document' : 'Submit documentation';
     const kicker = mode.startsWith('admin-') ? 'DOCUMENTATION ADMINISTRATION' : 'CONTRIBUTE TO THE KNOWLEDGE BASE';
     const copy = mode === 'edit'
-      ? 'Suggest corrections or improvements. Your changes will be reviewed before the public version is updated.'
+      ? 'Suggest corrections or improvements to a Community Doc. Your changes will be reviewed before the public version is updated.'
       : mode === 'admin-create'
-        ? 'Create and publish an official document or a community resource. You can update or reorder it later from this panel.'
+        ? 'Publish an official Pancake reference or a community resource. Official documents appear in the curated order managed below.'
         : mode === 'admin-edit'
-          ? 'Update this published document. Changes are saved immediately.'
-          : 'Share a useful guide with the Pancake community. New submissions are reviewed before publishing.';
+          ? 'Update this published document, choose its visibility, or move it between official and community collections.'
+          : 'Share a useful guide with the Pancake community. New submissions always enter the Community Docs review queue.';
     const submitLabel = mode === 'edit' || mode === 'submission' ? 'Send for review' : mode === 'admin-create' ? 'Publish document' : 'Save changes';
     $('#doc-form-title').textContent = title; $('#doc-form-kicker').textContent = kicker; $('#doc-form-copy').textContent = copy;
     $('#doc-form-submit').innerHTML = `${escapeHtml(submitLabel)} <span aria-hidden="true">↗</span>`;
@@ -537,26 +555,36 @@
     const form = event.currentTarget, errorBox = $('#doc-form-error'), submitButton = $('#doc-form-submit');
     errorBox.hidden = true;
     const oldHtml = submitButton.innerHTML; submitButton.disabled = true; submitButton.textContent = 'Saving…';
+    const selectedTopic = $('input[name="doc-topic-picker"]:checked', form)?.value || 'Other';
+    const selectedTags = $$('input[name="doc-tag-picker"]:checked', form).map((input) => input.value);
+    form.elements.category.value = selectedTopic;
+    form.elements.tags.value = selectedTags.join(', ');
+    const mode = state.editorMode;
     const fields = {
-      title: form.elements.title.value.trim(), category: form.elements.category.value.trim(),
-      tags: form.elements.tags.value.split(',').map((tag) => tag.trim()).filter(Boolean),
-      summary: form.elements.summary.value.trim(), content: form.elements.content.value.trim(),
-      source: state.editorMode.startsWith('admin-') ? (form.elements.source?.value || 'official') : 'community'
+      title: form.elements.title.value.trim(), category: selectedTopic, tags: selectedTags,
+      summary: form.elements.summary.value.trim(), content: form.elements.content.value.trim()
     };
+    if (mode.startsWith('admin-')) fields.source = form.elements.source?.value || 'official';
+    if (mode === 'admin-edit') fields.visibility = form.elements.visibility?.value || 'public';
     try {
       let response;
-      if (state.editorMode === 'submission' || state.editorMode === 'edit') {
-        if (state.editorMode === 'edit') fields.documentId = state.editorDocumentId;
+      if (mode === 'submission' || mode === 'edit') {
+        if (mode === 'edit') fields.documentId = state.editorDocumentId;
+        // The backend decides source from request type/document. Normal users cannot choose Official.
         response = await api('/api/docs/submissions', { method: 'POST', body: fields });
-      } else if (state.editorMode === 'admin-create') {
+      } else if (mode === 'admin-create') {
         response = await api('/api/docs/admin/documents', { method: 'POST', body: fields });
       } else {
         response = await api(`/api/docs/admin/documents/${encodeURIComponent(state.editorDocumentId)}`, { method: 'PUT', body: { ...fields, order: state.editorOrder } });
       }
       closeDialog('doc-form-dialog'); notify(response.message || 'Documentation saved.');
-      if (state.editorMode.startsWith('admin-')) { await loadAdminDashboard(false); await loadCatalogue(); }
-      else if (state.editorMode === 'edit' && state.selectedDocument) await loadDocument(state.editorDocumentId);
-      else navigateCatalogue();
+      if (mode.startsWith('admin-')) {
+        await loadAdminDashboard(false); await loadCatalogue(); setMode('admin'); renderAdmin();
+      } else {
+        // Send the contributor straight to My Library, focused on the new pending request.
+        history.pushState({}, '', `${basePath}/?library=pending`);
+        await openLibrary({ focusPending: true });
+      }
     } catch (error) { errorBox.textContent = error.message || 'Could not save this document.'; errorBox.hidden = false; }
     finally { submitButton.disabled = false; submitButton.innerHTML = oldHtml; }
   }
@@ -605,11 +633,12 @@
   }
 
   function pendingSubmissionCard(request) {
-    const item = { ...(request.fields || request.document || request), title: request.fields?.title || request.title || 'Untitled submission',
-      summary: request.fields?.summary || request.summary || '', category: request.fields?.category || request.category || 'General',
-      tags: request.fields?.tags || request.tags || [], authorDisplayName: request.authorDisplayName || request.author?.displayName || state.user?.displayName,
+    const fields = request.fields || request.document || request;
+    const item = { ...fields, title: fields.title || request.title || 'Untitled submission',
+      summary: fields.summary || request.summary || '', category: fields.category || request.category || 'Other',
+      tags: fields.tags || request.tags || [], authorDisplayName: request.authorDisplayName || state.user?.displayName,
       createdAt: request.createdAt || request.submittedAt, source: 'community' };
-    return cardMarkup(item, { pending: true });
+    return `<div class="docs-pending-library-item">${cardMarkup(item, { pending: true })}<div class="docs-pending-item-actions"><button class="docs-small-button" type="button" data-action="toggle-library-pending-preview" data-request-id="${escapeHtml(request.requestId || request._id || '')}">Preview submission</button><span class="docs-status-pill">Pending for approval</span></div><div class="docs-pending-preview docs-markdown" data-pending-preview="${escapeHtml(request.requestId || request._id || '')}" hidden><h3>${escapeHtml(item.title)}</h3>${renderMarkdown(item.content || '', 'docs-pending-preview-content')}</div></div>`;
   }
   function profilePendingList(data) {
     const possible = data.pendingForApproval ?? data.pendingSubmissions ?? data.pending ?? data.submissions ?? data.requests ?? data.waitingForReview;
@@ -619,7 +648,7 @@
       return !status || /pending|review|waiting|submitted|requested/.test(status);
     });
   }
-  async function openLibrary() {
+  async function openLibrary({ focusPending = false } = {}) {
     if (!state.user) { login(); return; }
     setMode('library');
     $('#library-view').innerHTML = '<div class="docs-loading"><span class="docs-loader" aria-hidden="true"></span><span>Opening your library…</span></div>';
@@ -629,11 +658,12 @@
       const authored = Array.isArray(data.authored) ? data.authored : [];
       const pending = profilePendingList(data);
       $('#library-view').innerHTML = `
-        <header class="docs-page-heading docs-library-heading"><div><div class="docs-library-title-line">${avatarMarkup(state.user, 'docs-avatar docs-library-avatar')}<div><h2 id="library-heading">My Library</h2></div></div><p>Keep your saved references, published guides, and submissions in one place.</p></header>
+        <header class="docs-page-heading docs-library-heading"><div><div class="kicker">YOUR PANCAKE LIBRARY</div><h2 id="library-heading">My Library</h2><p>Keep your saved references, published guides, and submissions in one place.</p></div><button class="docs-back-button" type="button" data-go-catalogue>← Back to all docs</button></header>
         <section class="docs-library-section"><div class="docs-library-section-heading"><div><h3>Saved favorites <span class="docs-count-pill">${formatNumber(favorites.length)}</span></h3><p>Documents you bookmarked for later.</p></div><button class="docs-text-button" type="button" data-go-catalogue>Browse docs ↗</button></div><div class="docs-library-grid">${favorites.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">You have not saved any documents yet.</div>'}</div></section>
         <section class="docs-library-section"><div class="docs-library-section-heading"><div><h3>Published by you <span class="docs-count-pill">${formatNumber(authored.length)}</span></h3><p>Your documentation that has been approved and published.</p></div></div><div class="docs-library-grid">${authored.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">You have not published any documents yet.</div>'}</div></section>
-        <section class="docs-library-section"><div class="docs-library-section-heading"><div><h3>Pending for approval <span class="docs-count-pill">${formatNumber(pending.length)}</span></h3><p>Submissions and edits waiting for the documentation team to review.</p></div></div><div class="docs-library-grid">${pending.map(pendingSubmissionCard).join('') || '<div class="docs-inline-empty">You have no documents waiting for approval.</div>'}</div></section>`;
+        <section class="docs-library-section" id="docs-pending-library"><div class="docs-library-section-heading"><div><h3>Pending for approval <span class="docs-count-pill">${formatNumber(pending.length)}</span></h3><p>Submissions and edits waiting for the documentation team to review.</p></div></div><div class="docs-library-grid docs-pending-grid">${pending.map(pendingSubmissionCard).join('') || '<div class="docs-inline-empty">You have no documents waiting for approval.</div>'}</div></section>`;
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (focusPending) requestAnimationFrame(() => $('#docs-pending-library')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
     } catch (error) {
       $('#library-view').innerHTML = `<div class="docs-empty-state"><h3>Could not load your library</h3><p>${escapeHtml(error.message)}</p><button class="docs-small-button" type="button" data-go-catalogue>← Back to all docs</button></div>`;
     }
@@ -641,22 +671,27 @@
 
   function renderAdmin() {
     const data = state.adminData || { documents: [], requests: [] };
-    const documents = [...(data.documents || [])].sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0) || String(a.title).localeCompare(String(b.title)));
+    const documents = [...(data.documents || [])];
+    const officialDocuments = documents.filter((item) => getSource(item) === 'official').sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0) || String(a.title).localeCompare(String(b.title)));
+    const communityDocuments = documents.filter((item) => getSource(item) !== 'official').sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
     const requests = data.requests || [];
     const categories = new Set(documents.map((item) => item.category).filter(Boolean));
     const requestRows = requests.map((request) => {
       const fields = request.fields || {};
       const typeLabel = request.requestType === 'edit' ? 'EDIT REQUEST' : 'NEW SUBMISSION';
-      return `<article class="docs-admin-row docs-request-row"><div class="docs-admin-row-main"><strong>${escapeHtml(fields.title || 'Untitled submission')}</strong><p>${escapeHtml(fields.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${typeLabel}</span><span>By ${escapeHtml(request.authorDisplayName || 'Unknown')}</span><span>Submitted ${escapeHtml(formatDate(request.createdAt))}</span>${fields.category ? `<span>${escapeHtml(fields.category)}</span>` : ''}</div></div><div class="docs-admin-row-actions"><button class="docs-small-button" type="button" data-action="toggle-request-preview">Preview</button><button class="docs-small-button" type="button" data-action="approve-request" data-request-id="${escapeHtml(request.requestId)}">Approve</button><button class="docs-small-button" type="button" data-action="reject-request" data-request-id="${escapeHtml(request.requestId)}">Reject</button></div><div class="docs-request-preview" hidden><div class="docs-admin-row-meta"><span>Markdown submission</span>${(fields.tags || []).map((tag) => `<span>#${escapeHtml(tag)}</span>`).join('')}</div>${renderMarkdown(fields.content || '', 'docs-request-markdown')}</div></article>`;
+      return `<article class="docs-admin-row docs-request-row"><div class="docs-admin-row-main"><strong>${escapeHtml(fields.title || 'Untitled submission')}</strong><p>${escapeHtml(fields.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${typeLabel}</span><span>By ${escapeHtml(request.authorDisplayName || 'Unknown')}</span><span>Submitted ${escapeHtml(formatDate(request.createdAt))}</span>${fields.category ? `<span>${escapeHtml(fields.category)}</span>` : ''}<span>Community</span></div></div><div class="docs-admin-row-actions"><button class="docs-small-button" type="button" data-action="toggle-request-preview">Preview</button><button class="docs-small-button" type="button" data-action="approve-request" data-request-id="${escapeHtml(request.requestId)}">Approve</button><button class="docs-small-button" type="button" data-action="reject-request" data-request-id="${escapeHtml(request.requestId)}">Reject</button></div><div class="docs-request-preview" hidden><div class="docs-admin-row-meta">${(fields.tags || []).map((tag) => `<span>#${escapeHtml(tag)}</span>`).join('')}</div>${renderMarkdown(fields.content || '', 'docs-request-markdown')}</div></article>`;
     }).join('');
-    const documentRows = documents.map((item, index) => `<article class="docs-admin-row"><div class="docs-admin-row-main"><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${escapeHtml(item.category || 'General')}</span><span>${getSource(item) === 'official' ? 'Official' : 'Community'}</span><span>By ${escapeHtml(item.authorDisplayName || 'Unknown')}</span><span>Updated ${escapeHtml(formatDate(item.updatedAt || item.createdAt))}</span><span>Order ${index + 1}</span></div></div><div class="docs-admin-row-actions"><div class="docs-order-buttons"><button type="button" data-action="move-doc" data-document-id="${escapeHtml(item.documentId)}" data-delta="-1" aria-label="Move up" ${index === 0 ? 'disabled' : ''}>↑</button><button type="button" data-action="move-doc" data-document-id="${escapeHtml(item.documentId)}" data-delta="1" aria-label="Move down" ${index === documents.length - 1 ? 'disabled' : ''}>↓</button></div><button type="button" class="docs-small-button" data-action="edit-admin-document" data-document-id="${escapeHtml(item.documentId)}">Edit</button><button type="button" class="docs-small-button" data-action="delete-admin-document" data-document-id="${escapeHtml(item.documentId)}">Delete</button></div></article>`).join('');
+    const officialRows = officialDocuments.map((item, index) => `<article class="docs-admin-row"><div class="docs-admin-row-main"><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${escapeHtml(item.category || 'Other')}</span><span>Official</span><span>Visibility: ${item.visibility === 'private' ? 'Private' : 'Public'}</span><span>Updated ${escapeHtml(formatDate(item.updatedAt || item.createdAt))}</span><span>Official order ${index + 1}</span></div></div><div class="docs-admin-row-actions"><div class="docs-order-buttons"><button type="button" data-action="move-doc" data-document-id="${escapeHtml(item.documentId)}" data-delta="-1" aria-label="Move up" ${index === 0 ? 'disabled' : ''}>↑</button><button type="button" data-action="move-doc" data-document-id="${escapeHtml(item.documentId)}" data-delta="1" aria-label="Move down" ${index === officialDocuments.length - 1 ? 'disabled' : ''}>↓</button></div><button type="button" class="docs-small-button" data-action="edit-admin-document" data-document-id="${escapeHtml(item.documentId)}">Edit</button><button type="button" class="docs-small-button" data-action="delete-admin-document" data-document-id="${escapeHtml(item.documentId)}">Delete</button></div></article>`).join('');
+    const communityRows = communityDocuments.map((item) => `<article class="docs-admin-row"><div class="docs-admin-row-main"><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${escapeHtml(item.category || 'Other')}</span><span>Community</span><span>Visibility: ${item.visibility === 'private' ? 'Private' : 'Public'}</span><span>Updated ${escapeHtml(formatDate(item.updatedAt || item.createdAt))}</span><span>${formatNumber(getViews(item))} views</span></div></div><div class="docs-admin-row-actions"><button type="button" class="docs-small-button" data-action="edit-admin-document" data-document-id="${escapeHtml(item.documentId)}">Edit</button><button type="button" class="docs-small-button" data-action="delete-admin-document" data-document-id="${escapeHtml(item.documentId)}">Delete</button></div></article>`).join('');
     $('#admin-view').innerHTML = `
-      <header class="docs-page-heading"><div><div class="kicker">EDITORIAL WORKSPACE</div><h2 id="admin-heading">Documents admin</h2><p>Review submissions, maintain published articles, and decide how the knowledge base is organized.</p></div><div class="docs-heading-actions"><button class="docs-back-button" type="button" data-go-catalogue>← Back to all docs</button><button class="docs-small-button docs-primary-small" type="button" data-action="new-admin-document">＋ New document</button></div></header>
-      <div class="docs-admin-summary"><div class="docs-admin-stat"><span>Published documents</span><strong>${formatNumber(documents.length)}</strong></div><div class="docs-admin-stat"><span>Waiting for review</span><strong>${formatNumber(requests.length)}</strong></div><div class="docs-admin-stat"><span>Topics</span><strong>${formatNumber(categories.size)}</strong></div></div>
-      <section class="docs-admin-section docs-admin-review"><div class="docs-admin-section-header"><div><h3>Submissions &amp; suggested edits</h3><p>Approve to publish a new page or replace the existing page with the author's suggested update.</p></div></div><div class="docs-admin-rows">${requestRows || '<div class="docs-inline-empty">The review queue is clear. No submissions are waiting.</div>'}</div></section>
-      <section class="docs-admin-section"><div class="docs-admin-section-header"><div><h3>Published documents</h3><p>Use the arrows to change public reading order. Select Official or Community when editing a document.</p></div><button class="docs-small-button" type="button" data-action="refresh-admin">Refresh</button></div><div class="docs-admin-rows">${documentRows || '<div class="docs-inline-empty">No documents have been published yet. Create the first one.</div>'}</div></section>
+      <header class="docs-page-heading"><div><div class="kicker">EDITORIAL WORKSPACE</div><h2 id="admin-heading">Documents admin</h2><p>Review community submissions, manage official references, and control published visibility.</p></div><div class="docs-heading-actions"><button class="docs-back-button" type="button" data-go-catalogue>← Back to all docs</button><button class="docs-small-button docs-primary-small" type="button" data-action="new-admin-document">＋ New document</button></div></header>
+      <div class="docs-admin-summary"><div class="docs-admin-stat"><span>Published documents</span><strong>${formatNumber(documents.length)}</strong></div><div class="docs-admin-stat"><span>Waiting for review</span><strong>${formatNumber(requests.length)}</strong></div><div class="docs-admin-stat"><span>Topics used</span><strong>${formatNumber(categories.size)}</strong></div></div>
+      <section class="docs-admin-section docs-admin-review"><div class="docs-admin-section-header"><div><h3>Community submissions &amp; suggested edits</h3><p>New submissions are always reviewed as Community Docs; official documents are published by administrators.</p></div></div><div class="docs-admin-rows">${requestRows || '<div class="docs-inline-empty">The review queue is clear. No submissions are waiting.</div>'}</div></section>
+      <section class="docs-admin-section"><div class="docs-admin-section-header"><div><h3>Pancake Official Documentation <span class="docs-count-pill">${officialDocuments.length}</span></h3><p>These documents keep a fixed public order. Use the arrows to arrange them; the public catalogue has no sort control.</p></div><button class="docs-small-button" type="button" data-action="refresh-admin">Refresh</button></div><div class="docs-admin-rows">${officialRows || '<div class="docs-inline-empty">No official documents published yet.</div>'}</div></section>
+      <section class="docs-admin-section"><div class="docs-admin-section-header"><div><h3>Community Docs <span class="docs-count-pill">${communityDocuments.length}</span></h3><p>These documents are shown in the public gallery and can be sorted by visitors.</p></div></div><div class="docs-admin-rows">${communityRows || '<div class="docs-inline-empty">No community documents published yet.</div>'}</div></section>
       <p class="docs-admin-status" id="docs-admin-status">Administrator changes use the same Discord authorization and additional admin verification as Plugin Portal.</p>`;
   }
+
   async function loadAdminDashboard(enterMode = true) {
     try {
       state.adminData = await api('/api/docs/admin/dashboard'); state.adminUnlocked = true;
@@ -683,13 +718,15 @@
     finally { submit.disabled = false; submit.textContent = oldText; }
   }
   async function reorderDocuments(documentId, delta) {
-    const sorted = [...(state.adminData.documents || [])].sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0) || String(a.title).localeCompare(String(b.title)));
+    const sorted = [...(state.adminData.documents || [])].filter((item) => getSource(item) === 'official')
+      .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0) || String(a.title).localeCompare(String(b.title)));
     const index = sorted.findIndex((item) => item.documentId === documentId), next = index + delta;
     if (index < 0 || next < 0 || next >= sorted.length) return;
     [sorted[index], sorted[next]] = [sorted[next], sorted[index]];
-    try { await api('/api/docs/admin/reorder', { method: 'PUT', body: { documentIds: sorted.map((item) => item.documentId) } }); await loadAdminDashboard(false); notify('Document order saved.'); }
+    try { await api('/api/docs/admin/reorder', { method: 'PUT', body: { documentIds: sorted.map((item) => item.documentId) } }); await loadAdminDashboard(false); notify('Official document order saved.'); }
     catch (error) { notify(error.message, 'error'); }
   }
+
   async function reviewRequest(requestId, approved) {
     const action = approved ? 'approve' : 'reject';
     if (!window.confirm(approved ? 'Approve and publish this documentation?' : 'Reject this documentation submission?')) return;
@@ -736,8 +773,6 @@
     const docLink = target.closest('[data-open-doc]');
     if (docLink) { event.preventDefault(); navigateDocument(docLink.dataset.openDoc); return; }
 
-    const topicButton = target.closest('[data-topic]');
-    if (topicButton) { state.selectedCategory = topicButton.dataset.topic || ''; state.selectedTag = ''; setMode('catalogue'); renderCatalogue(); return; }
     const goCatalogue = target.closest('[data-go-catalogue]');
     if (goCatalogue) { event.preventDefault(); navigateCatalogue(); return; }
 
@@ -760,13 +795,25 @@
     }
     if (target.closest('#clear-search-button, #reset-search-button, [data-reset-filters]')) {
       state.query = ''; state.selectedCategory = ''; state.selectedTag = ''; $('#docs-search').value = '';
-      setMode('catalogue'); renderCatalogue(); return;
+      resetShareMetadata(); setMode('catalogue'); renderCatalogue(); return;
     }
     if (target.closest('#retry-docs-button')) { await loadCatalogue(); return; }
     if (target.closest('#toggle-markdown-preview')) {
       state.previewVisible = !state.previewVisible; $('#markdown-preview').hidden = !state.previewVisible;
       $('#toggle-markdown-preview').textContent = state.previewVisible ? 'Hide Markdown preview ↑' : 'Preview Markdown ↗';
       if (state.previewVisible) $('#markdown-preview').innerHTML = renderMarkdown($('#doc-form').elements.content.value, 'docs-preview-content'); return;
+    }
+    const choiceInput = target.closest('input[name="doc-topic-picker"], input[name="doc-tag-picker"]');
+    if (choiceInput) {
+      if (choiceInput.name === 'doc-topic-picker') {
+        state.editorCategory = choiceInput.value;
+        $('#doc-topic-options').querySelectorAll('.docs-choice-chip').forEach((chip) => chip.classList.toggle('is-selected', chip.contains(choiceInput) ? choiceInput.checked : Boolean($('input', chip)?.checked)));
+        $('#doc-form').elements.category.value = choiceInput.value;
+      } else {
+        state.editorTags = $$('input[name="doc-tag-picker"]:checked', $('#doc-form')).map((input) => input.value);
+        choiceInput.closest('.docs-choice-chip')?.classList.toggle('is-selected', choiceInput.checked);
+        $('#doc-form').elements.tags.value = state.editorTags.join(', ');
+      }
     }
 
     const actionButton = target.closest('[data-action]');
@@ -790,6 +837,13 @@
       const row = actionButton.closest('.docs-request-row'), preview = $('.docs-request-preview', row);
       if (preview) preview.hidden = !preview.hidden;
       actionButton.textContent = preview && !preview.hidden ? 'Hide preview' : 'Preview';
+      return;
+    }
+    if (action === 'toggle-library-pending-preview') {
+      const id = actionButton.dataset.requestId || '';
+      const preview = $(`[data-pending-preview="${CSS.escape(id)}"]`);
+      if (preview) preview.hidden = !preview.hidden;
+      actionButton.textContent = preview && !preview.hidden ? 'Hide preview' : 'Preview submission';
     }
   });
 
@@ -807,10 +861,22 @@
     if (state.currentMode !== 'catalogue') { history.pushState({}, '', `${basePath}/`); setMode('catalogue'); }
     renderCatalogue();
   });
-  $('#official-sort').addEventListener('change', (event) => { state.sort.official = event.currentTarget.value; renderCatalogue(); });
   $('#community-sort').addEventListener('change', (event) => { state.sort.community = event.currentTarget.value; renderCatalogue(); });
   $('#admin-auth-form').addEventListener('submit', submitAdminAuth);
   $('#doc-form').addEventListener('submit', submitDocForm);
+  $('#doc-form').addEventListener('change', (event) => {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement)) return;
+    if (input.name === 'doc-topic-picker') {
+      state.editorCategory = input.value;
+      $('#doc-form').elements.category.value = input.value;
+      $('#doc-topic-options').querySelectorAll('.docs-choice-chip').forEach((chip) => chip.classList.toggle('is-selected', Boolean($('input', chip)?.checked)));
+    } else if (input.name === 'doc-tag-picker') {
+      state.editorTags = $$('input[name="doc-tag-picker"]:checked', $('#doc-form')).map((item) => item.value);
+      $('#doc-form').elements.tags.value = state.editorTags.join(', ');
+      input.closest('.docs-choice-chip')?.classList.toggle('is-selected', input.checked);
+    }
+  });
   $('#doc-form').elements.content.addEventListener('input', () => {
     if (state.previewVisible) $('#markdown-preview').innerHTML = renderMarkdown($('#doc-form').elements.content.value, 'docs-preview-content');
   });
@@ -821,7 +887,8 @@
         if (window.location.hash) scrollToSection(window.location.hash.slice(1), { updateUrl: false });
         else window.scrollTo({ top: 0, behavior: 'smooth' });
       } else loadDocument(documentId);
-    } else { resetShareMetadata(); setMode('catalogue'); renderCatalogue(); }
+    } else if (params.get('library') === 'pending' && state.user) openLibrary({ focusPending: true });
+    else { resetShareMetadata(); setMode('catalogue'); renderCatalogue(); }
   });
 
   async function init() {
@@ -832,8 +899,10 @@
     if (authStatus === 'error') notify('Discord sign-in could not be completed. Please try again.', 'error');
     if (authStatus) { params.delete('auth'); const cleanUrl = new URL(window.location.href); cleanUrl.search = params.toString(); history.replaceState({}, '', cleanUrl.toString()); }
     await refreshSession(); await loadCatalogue();
-    const documentId = new URLSearchParams(window.location.search).get('doc');
+    const routeParams = new URLSearchParams(window.location.search);
+    const documentId = routeParams.get('doc');
     if (documentId && /^\d{1,40}$/.test(documentId)) await loadDocument(documentId);
+    else if (routeParams.get('library') === 'pending' && state.user) await openLibrary({ focusPending: true });
   }
   init();
 })();

@@ -84,7 +84,7 @@
             </aside>
             <div class="docs-results-column">
               <section class="docs-collection" aria-labelledby="official-docs-heading">
-                <div class="docs-collection-heading"><div><div class="kicker">MAINTAINED BY PANCAKE</div><h2 id="official-docs-heading">Pancake Official Documentation</h2><p>Core guides, features, setup, and official references.</p></div><div class="docs-collection-tools"><span class="docs-count-pill" id="official-count">0</span><label class="docs-sort-wrap"><span>Sort</span><select id="official-sort" aria-label="Sort official documentation"><option value="newest">Recently added</option><option value="views">Most viewed</option><option value="helpful">Most helpful</option><option value="az">Name A–Z</option></select></label></div></div>
+                <div class="docs-collection-heading"><div><div class="kicker">MAINTAINED BY PANCAKE</div><h2 id="official-docs-heading">Pancake Official Documentation</h2><p>Core guides, features, setup, and official references.</p></div><div class="docs-collection-tools"><span class="docs-count-pill" id="official-count">0 official documents</span><span class="docs-fixed-order-label">Curated order</span></div></div>
                 <div id="official-docs-list" class="docs-list" aria-live="polite"><div class="docs-loading"><span class="docs-loader" aria-hidden="true"></span><span>Gathering official documents…</span></div></div>
               </section>
               <section class="docs-collection docs-community-collection" aria-labelledby="community-docs-heading">
@@ -115,9 +115,13 @@
     <p class="docs-dialog-copy" id="doc-form-copy">Share a useful guide with the Pancake community. New submissions are reviewed before publishing.</p>
     <form id="doc-form" class="docs-form">
       <label class="docs-field"><span>Document title</span><input name="title" type="text" minlength="2" maxlength="120" placeholder="e.g. Getting started with Pancake" required /></label>
-      <div class="docs-form-row"><label class="docs-field"><span>Topic</span><input name="category" type="text" maxlength="60" placeholder="Getting started" /></label><label class="docs-field"><span>Tags</span><input name="tags" type="text" maxlength="400" placeholder="setup, commands, tips" /><small>Separate tags with commas. Tags become selectable filters on the Docs page.</small></label></div>
+      <input name="category" type="hidden" value="Other" />
+      <input name="tags" type="hidden" value="" />
+      <fieldset class="docs-choice-field"><legend>Topic <span class="docs-choice-required">Choose one</span></legend><div class="docs-choice-grid docs-topic-choice-grid" id="doc-topic-options"></div></fieldset>
+      <fieldset class="docs-choice-field"><legend>Tags <span class="docs-choice-hint">Choose any that apply</span></legend><div class="docs-choice-grid docs-tag-choice-grid" id="doc-tag-options"></div><small>These tags are also used as selectable filters throughout Docs.</small></fieldset>
+      <label class="docs-field" id="doc-visibility-field" hidden><span>Visibility</span><select name="visibility"><option value="public">Public — visible to everyone</option><option value="private">Private — hidden from the public catalogue</option></select><small>Visibility can be changed by an administrator when editing a published document.</small></label>
       <label class="docs-field"><span>Short summary</span><textarea name="summary" rows="2" maxlength="500" placeholder="What will readers learn from this page?"></textarea></label>
-      <label class="docs-field" id="doc-source-field" hidden><span>Documentation collection</span><select name="source"><option value="official">Pancake Official Documentation</option><option value="community">Community Docs</option></select><small>Used to organize this article on the public Docs page.</small></label>
+      <label class="docs-field" id="doc-source-field" hidden><span>Documentation collection</span><select name="source"><option value="official">Pancake Official Documentation</option><option value="community">Community Docs</option></select><small>Only administrators can choose the collection. Community submissions always enter the review queue as Community Docs.</small></label>
       <label class="docs-field"><span>Document content <b>MARKDOWN</b></span><textarea name="content" rows="13" maxlength="50000" placeholder="# Heading&#10;&#10;Write your documentation in Markdown…&#10;&#10;Add an image with: ![Description](https://example.com/image.png)" required></textarea><small>Supports headings, links, bold and italic text, tables, lists, code blocks, and images with standard Markdown syntax: <code>![Alt text](https://…)</code>.</small></label>
       <div class="docs-preview-tools"><button type="button" class="docs-text-button" id="toggle-markdown-preview">Preview Markdown ↗</button></div>
       <div id="markdown-preview" class="docs-markdown docs-markdown-preview" hidden></div>
