@@ -478,6 +478,15 @@
     return true;
   }
 
+  function scrollToDocumentTitle() {
+    const title = $('.docs-article-title', $('#detail-view'));
+    if (!title) return false;
+    // Use an immediate, deterministic scroll when a document is first opened.
+    // The title's scroll-margin-top keeps it clear of the site navigation.
+    title.scrollIntoView({ behavior: 'auto', block: 'start' });
+    return true;
+  }
+
   function renderDetail(documentItem, feedback, pendingChange = null, options = {}) {
     const restoreScrollY = Number.isFinite(options.scrollY) ? options.scrollY : window.scrollY;
     if (!documentItem || typeof documentItem !== 'object') {
@@ -528,8 +537,15 @@
     const hash = window.location.hash;
     if (options.scrollToHash !== false && hash && !hash.startsWith('#auth_code')) {
       const id = decodeURIComponentSafe(hash.slice(1));
-      // Explicit Markdown heading links are the only detail-view action that should scroll.
-      requestAnimationFrame(() => scrollToSection(id, { updateUrl: false }));
+      // Preserve real deep links, but fall back to the document title for stale/invalid hashes.
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        const didScrollToHash = scrollToSection(id, { updateUrl: false });
+        if (!didScrollToHash && options.scrollToTitle) scrollToDocumentTitle();
+        else if (!didScrollToHash) window.scrollTo({ top: restoreScrollY, behavior: 'auto' });
+      }));
+    } else if (options.scrollToTitle) {
+      // Opening a document always starts at its title, rather than inheriting the catalogue's scroll.
+      requestAnimationFrame(() => requestAnimationFrame(scrollToDocumentTitle));
     } else {
       // Re-rendering a document (for example after voting) must not move the reader.
       requestAnimationFrame(() => window.scrollTo({ top: restoreScrollY, behavior: 'auto' }));
@@ -548,7 +564,7 @@
       state.allDocuments = state.allDocuments.map((item) => item.documentId === result.document.documentId
         ? { ...item, views: getViews(result.document), usefulCount: getUsefulCount(result.document), coverImage: result.document.coverImage || item.coverImage }
         : item);
-      renderDetail(result.document, result.feedback, result.pendingChange, { scrollY: requestedScrollY });
+      renderDetail(result.document, result.feedback, result.pendingChange, { scrollY: requestedScrollY, scrollToTitle: true });
     } catch (error) {
       $('#detail-view').innerHTML = `<div class="docs-empty-state"><span class="docs-empty-mark" aria-hidden="true">!</span><h3>Could not open this document</h3><p>${escapeHtml(error.message)}</p><button class="docs-small-button" data-go-catalogue type="button">← Back to all docs</button></div>`;
       requestAnimationFrame(() => window.scrollTo({ top: requestedScrollY, behavior: 'auto' }));
@@ -621,9 +637,9 @@
     form.elements.content.value = documentItem?.content || '';
     renderEditorChoices(documentItem);
     const sourceField = $('#doc-source-field');
-    // Normal submissions never expose a collection selector. New admin documents
-    // are always Official; only editing an existing document can move collections.
-    sourceField.hidden = mode !== 'admin-edit';
+    // The source selector is optional in this page's form markup. Do not let its
+    // absence prevent the submission dialog from opening.
+    if (sourceField) sourceField.hidden = mode !== 'admin-edit';
     if (form.elements.source) form.elements.source.value = documentItem ? getSource(documentItem) : 'official';
     const visibilityField = $('#doc-visibility-field');
     visibilityField.hidden = mode !== 'admin-edit';
