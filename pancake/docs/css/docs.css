@@ -348,7 +348,7 @@
   .docs-hero { padding: 108px 0 27px; }
   .docs-hero::after { right: -40px; bottom: -90px; width: 270px; height: 270px; box-shadow: 0 0 0 25px rgba(255,255,255,.08), 0 0 0 52px rgba(11,11,12,.03); }
   .docs-hero-icon { --docs-icon-size: clamp(165px, 43vw, 205px); right: calc(95px - (var(--docs-icon-size) / 2)); bottom: calc(45px - (var(--docs-icon-size) / 2)); opacity: .14; filter: blur(2.5px) saturate(.8); }
-  .docs-title { font-size: clamp(40px, 13vw, 58px); }
+  .docs-title { font-size: clamp(40px, 10vw, 58px); }
   .docs-search-panel { min-height: 55px; gap: 9px; margin-top: 23px; padding: 0 12px; }
   .docs-search-caption { flex-direction: column; gap: 5px; }
   .docs-main-shell { padding-top: 30px; padding-bottom: 50px; }
@@ -597,7 +597,7 @@
   .docs-root .docs-hero { padding: 100px 0 25px; }
   .docs-root .docs-hero-icon { --docs-icon-size: clamp(145px, 40vw, 190px); right: -12px; bottom: -28px; opacity: .11; }
   .docs-root .docs-hero-row { gap: 17px; }
-  .docs-root .docs-title { font-size: clamp(38px, 11vw, 56px); line-height: 1; letter-spacing: -.065em; }
+  .docs-root .docs-title { font-size: clamp(38px, 10vw, 56px); line-height: 1; letter-spacing: -.065em; }
   .docs-root .docs-lede { max-width: 620px; margin-top: 13px; font-size: clamp(14px, 3.5vw, 16px); line-height: 1.65; }
   .docs-root .docs-account-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .docs-root .docs-account-actions > button { width: 100%; min-height: 42px; padding-inline: 9px; white-space: normal; text-align: center; }
@@ -679,7 +679,7 @@
 @media (max-width: 420px) {
   .docs-root .docs-shell { width: calc(100% - 24px); }
   .docs-root .docs-hero { padding-top: 92px; }
-  .docs-root .docs-title { font-size: clamp(35px, 10.8vw, 45px); }
+  .docs-root .docs-title { font-size: clamp(35px, 10vw, 45px); }
   .docs-root .docs-hero-icon { --docs-icon-size: 142px; right: -27px; bottom: -31px; }
   .docs-root .docs-account-actions { grid-template-columns: minmax(0, 1fr); }
   .docs-root .docs-account-actions #login-button { grid-column: auto; }
