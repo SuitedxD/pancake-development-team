@@ -64,8 +64,18 @@
       item?.stats?.helpful, item?.metrics?.helpful
     );
   }
+  function getTopic(itemOrValue) {
+    const value = typeof itemOrValue === 'string' ? itemOrValue : itemOrValue?.category;
+    const normalized = String(value || '').trim().toLowerCase();
+    return DOC_TOPICS.find((topic) => topic.toLowerCase() === normalized) || 'Other';
+  }
   function getTags(item) {
-    return Array.isArray(item?.tags) ? item.tags.map((tag) => String(tag).trim()).filter(Boolean) : [];
+    if (!Array.isArray(item?.tags)) return [];
+    const normalized = item.tags
+      .map((tag) => String(tag || '').trim())
+      .filter(Boolean)
+      .map((tag) => DOC_TAGS.find((knownTag) => knownTag.toLowerCase() === tag.toLowerCase()) || 'Other');
+    return [...new Set(normalized)];
   }
   function getSource(item) {
     if (!item) return 'community';
@@ -313,7 +323,7 @@
   }
 
   function cardMarkup(item, { pending = false } = {}) {
-    const category = item.category || 'Other';
+    const category = getTopic(item);
     const tags = getTags(item).slice(0, 6).map((tag) => `<button type="button" class="docs-tag${state.selectedTag.toLowerCase() === tag.toLowerCase() ? ' is-active' : ''}" data-tag-filter="${escapeHtml(tag)}" aria-pressed="${state.selectedTag.toLowerCase() === tag.toLowerCase()}">#${escapeHtml(tag)}</button>`).join('');
     const updatedDate = formatDate(item.updatedAt || item.createdAt);
     const source = getSource(item);
@@ -334,17 +344,26 @@
   }
 
   function renderTopics() {
-    const wrap = $('#docs-topic-filters');
-    const allActive = state.selectedCategory === '';
-    const all = `<button class="docs-topic-button${allActive ? ' is-active' : ''}" data-topic-filter="" type="button" aria-pressed="${allActive}">All topics <span>${formatNumber(state.allDocuments.length)}</span></button>`;
-    const topics = state.categories.map((category) => {
-      const active = state.selectedCategory === category;
-      const count = state.allDocuments.filter((item) => item.category === category).length;
-      return `<button class="docs-topic-button${active ? ' is-active' : ''}" data-topic-filter="${escapeHtml(category)}" type="button" aria-pressed="${active}">${escapeHtml(category)} <span>${formatNumber(count)}</span></button>`;
+    const topicsWrap = $('#docs-topic-filters');
+    const allTopicsActive = state.selectedCategory === '';
+    const allTopics = `<button class="docs-topic-button${allTopicsActive ? ' is-active' : ''}" data-topic-filter="" type="button" aria-pressed="${allTopicsActive}">All topics <span>${formatNumber(state.allDocuments.length)}</span></button>`;
+    const topics = DOC_TOPICS.map((topic) => {
+      const active = state.selectedCategory === topic;
+      const count = state.allDocuments.filter((item) => getTopic(item) === topic).length;
+      return `<button class="docs-topic-button${active ? ' is-active' : ''}" data-topic-filter="${escapeHtml(topic)}" type="button" aria-pressed="${active}">${escapeHtml(topic)} <span>${formatNumber(count)}</span></button>`;
     }).join('');
-    wrap.innerHTML = all + topics;
-    const uniqueTags = [...new Set(state.allDocuments.flatMap(getTags))].sort((a, b) => a.localeCompare(b));
-    $('#docs-tag-filters').innerHTML = [`<button type="button" class="docs-topic-button docs-tag-filter${!state.selectedTag ? ' is-active' : ''}" data-tag-filter="" aria-pressed="${!state.selectedTag}">All tags</button>`, ...uniqueTags.map((tag) => `<button type="button" class="docs-topic-button docs-tag-filter${state.selectedTag.toLowerCase() === tag.toLowerCase() ? ' is-active' : ''}" data-tag-filter="${escapeHtml(tag)}" aria-pressed="${state.selectedTag.toLowerCase() === tag.toLowerCase()}">#${escapeHtml(tag)}</button>`)].join('');
+    topicsWrap.innerHTML = allTopics + topics;
+
+    const tagsWrap = $('#docs-tag-filters');
+    const allTagsActive = state.selectedTag === '';
+    const allTagsCount = state.allDocuments.filter((item) => getTags(item).length > 0).length;
+    const allTags = `<button type="button" class="docs-topic-button docs-tag-filter${allTagsActive ? ' is-active' : ''}" data-tag-filter="" aria-pressed="${allTagsActive}">All tags <span>${formatNumber(allTagsCount)}</span></button>`;
+    const tags = DOC_TAGS.map((tag) => {
+      const active = state.selectedTag.toLowerCase() === tag.toLowerCase();
+      const count = state.allDocuments.filter((item) => getTags(item).some((itemTag) => itemTag.toLowerCase() === tag.toLowerCase())).length;
+      return `<button type="button" class="docs-topic-button docs-tag-filter${active ? ' is-active' : ''}" data-tag-filter="${escapeHtml(tag)}" aria-pressed="${active}">#${escapeHtml(tag)} <span>${formatNumber(count)}</span></button>`;
+    }).join('');
+    tagsWrap.innerHTML = allTags + tags;
   }
 
   function sortDocuments(items, sort) {
@@ -359,7 +378,7 @@
     renderTopics();
     const search = state.query.trim().toLowerCase();
     const matches = state.allDocuments.filter((item) => {
-      if (state.selectedCategory && String(item.category || '') !== state.selectedCategory) return false;
+      if (state.selectedCategory && getTopic(item) !== state.selectedCategory) return false;
       if (state.selectedTag && !getTags(item).some((tag) => tag.toLowerCase() === state.selectedTag.toLowerCase())) return false;
       if (!search) return true;
       const haystack = [item.title, item.summary, item.content, item.category, item.authorDisplayName, ...getTags(item)].join(' ').toLowerCase();
@@ -384,10 +403,13 @@
     try {
       const data = await api('/api/docs');
       state.allDocuments = Array.isArray(data.documents) ? data.documents : [];
-      state.categories = Array.isArray(data.categories) ? data.categories : [...new Set(state.allDocuments.map((item) => item.category).filter(Boolean))].sort();
+      // Keep the full predefined filter list available, including topics with zero documents.
+      state.categories = DOC_TOPICS;
       renderCatalogue();
     } catch (error) {
-      state.allDocuments = []; state.categories = [];
+      state.allDocuments = []; state.categories = DOC_TOPICS;
+      // Filters are predefined, so all selectable topics and tags remain visible even if the API is offline.
+      renderTopics();
       $('#official-docs-list').innerHTML = '';
       $('#community-docs-list').innerHTML = '';
       $('#docs-empty-state').hidden = false;
@@ -540,7 +562,7 @@
     const copy = mode === 'edit'
       ? 'Suggest corrections or improvements to a Community Doc. Your changes will be reviewed before the public version is updated.'
       : mode === 'admin-create'
-        ? 'Publish an official Pancake reference or a community resource. Official documents appear in the curated order managed below.'
+        ? 'Publish an official Pancake reference or a community resource. Official documents appear in the same order visitors see; administrators can arrange them with the order controls.'
         : mode === 'admin-edit'
           ? 'Update this published document, choose its visibility, or move it between official and community collections.'
           : 'Share a useful guide with the Pancake community. New submissions always enter the Community Docs review queue.';
@@ -687,7 +709,7 @@
       <header class="docs-page-heading"><div><div class="kicker">EDITORIAL WORKSPACE</div><h2 id="admin-heading">Documents admin</h2><p>Review community submissions, manage official references, and control published visibility.</p></div><div class="docs-heading-actions"><button class="docs-back-button" type="button" data-go-catalogue>← Back to all docs</button><button class="docs-small-button docs-primary-small" type="button" data-action="new-admin-document">＋ New document</button></div></header>
       <div class="docs-admin-summary"><div class="docs-admin-stat"><span>Published documents</span><strong>${formatNumber(documents.length)}</strong></div><div class="docs-admin-stat"><span>Waiting for review</span><strong>${formatNumber(requests.length)}</strong></div><div class="docs-admin-stat"><span>Topics used</span><strong>${formatNumber(categories.size)}</strong></div></div>
       <section class="docs-admin-section docs-admin-review"><div class="docs-admin-section-header"><div><h3>Community submissions &amp; suggested edits</h3><p>New submissions are always reviewed as Community Docs; official documents are published by administrators.</p></div></div><div class="docs-admin-rows">${requestRows || '<div class="docs-inline-empty">The review queue is clear. No submissions are waiting.</div>'}</div></section>
-      <section class="docs-admin-section"><div class="docs-admin-section-header"><div><h3>Pancake Official Documentation <span class="docs-count-pill">${officialDocuments.length}</span></h3><p>These documents keep a fixed public order. Use the arrows to arrange them; the public catalogue has no sort control.</p></div><button class="docs-small-button" type="button" data-action="refresh-admin">Refresh</button></div><div class="docs-admin-rows">${officialRows || '<div class="docs-inline-empty">No official documents published yet.</div>'}</div></section>
+      <section class="docs-admin-section"><div class="docs-admin-section-header"><div><h3>Pancake Official Documentation <span class="docs-count-pill">${officialDocuments.length}</span></h3><p>These documents keep a fixed public order. Use the arrows to arrange them; Community Docs can be sorted separately.</p></div><button class="docs-small-button" type="button" data-action="refresh-admin">Refresh</button></div><div class="docs-admin-rows">${officialRows || '<div class="docs-inline-empty">No official documents published yet.</div>'}</div></section>
       <section class="docs-admin-section"><div class="docs-admin-section-header"><div><h3>Community Docs <span class="docs-count-pill">${communityDocuments.length}</span></h3><p>These documents are shown in the public gallery and can be sorted by visitors.</p></div></div><div class="docs-admin-rows">${communityRows || '<div class="docs-inline-empty">No community documents published yet.</div>'}</div></section>
       <p class="docs-admin-status" id="docs-admin-status">Administrator changes use the same Discord authorization and additional admin verification as Plugin Portal.</p>`;
   }
