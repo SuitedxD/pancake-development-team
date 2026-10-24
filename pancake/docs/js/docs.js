@@ -626,15 +626,16 @@
     if (sourceField) sourceField.hidden = mode !== 'admin-edit';
     if (form.elements.source) form.elements.source.value = documentItem ? getSource(documentItem) : 'official';
     const visibilityField = $('#doc-visibility-field');
-    if (visibilityField) visibilityField.hidden = mode !== 'admin-edit';
-    // Visibility is an admin-only option when editing an already-published document.
+    // Visibility is available for owner edit requests and all admin create/edit flows,
+    // but not for a brand-new community submission.
+    if (visibilityField) visibilityField.hidden = mode === 'submission';
     if (form.elements.visibility) form.elements.visibility.value = documentItem?.visibility === 'private' ? 'private' : 'public';
     const title = mode === 'edit' ? 'Suggest edits' : mode === 'admin-create' ? 'Create a document' : mode === 'admin-edit' ? 'Edit document' : 'Submit documentation';
     const kicker = mode.startsWith('admin-') ? 'DOCUMENTATION ADMINISTRATION' : 'CONTRIBUTE TO THE KNOWLEDGE BASE';
     const copy = mode === 'edit'
-      ? 'Suggest corrections or improvements to a Community Doc. Your changes will be reviewed before the public version is updated.'
+      ? 'Suggest corrections, improvements, or a visibility change to this published Community Doc. All changes are reviewed before the public version is updated.'
       : mode === 'admin-create'
-        ? 'New documents created here are always published in Pancake Official Documentation. Official documents appear in the same order visitors see; administrators can arrange them with the order controls.'
+        ? 'New documents created here are published in Pancake Official Documentation. Choose whether the document is public or private; administrators can arrange official document order with the order controls.'
         : mode === 'admin-edit'
           ? 'Update this published document, choose its visibility, or move it between official and community collections.'
           : 'Share a useful guide with the Pancake community. New submissions always enter the Community Docs review queue.';
@@ -679,7 +680,7 @@
     if (mode === 'submission' || mode === 'edit') fields.source = 'community';
     else if (mode === 'admin-create') fields.source = 'official';
     else if (mode === 'admin-edit') fields.source = form.elements.source?.value || getSource(state.adminData.documents.find((item) => item.documentId === state.editorDocumentId) || {});
-    if (mode === 'admin-edit') fields.visibility = form.elements.visibility?.value || 'public';
+    if (mode !== 'submission') fields.visibility = form.elements.visibility?.value || 'public';
     try {
       let response;
       if (mode === 'submission' || mode === 'edit') {
@@ -793,7 +794,7 @@
     const requestRows = requests.map((request) => {
       const fields = request.fields || {};
       const typeLabel = request.requestType === 'edit' ? 'EDIT REQUEST' : 'NEW SUBMISSION';
-      return `<article class="docs-admin-row docs-request-row"><div class="docs-admin-row-main"><strong>${escapeHtml(fields.title || 'Untitled submission')}</strong><p>${escapeHtml(fields.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${typeLabel}</span><span>By ${escapeHtml(request.authorDisplayName || 'Unknown')}</span><span>Submitted ${escapeHtml(formatDate(request.createdAt))}</span>${fields.topic ? `<span>${escapeHtml(fields.topic)}</span>` : ''}<span>Community</span></div></div><div class="docs-admin-row-actions"><button class="docs-small-button" type="button" data-action="toggle-request-preview">Preview</button><button class="docs-small-button" type="button" data-action="approve-request" data-request-id="${escapeHtml(request.requestId)}">Approve</button><button class="docs-small-button" type="button" data-action="reject-request" data-request-id="${escapeHtml(request.requestId)}">Reject</button></div><div class="docs-request-preview" hidden><div class="docs-admin-row-meta">${(fields.categories || []).map((category) => `<span>${escapeHtml(category)}</span>`).join('')}</div>${renderMarkdown(fields.content || '', 'docs-request-markdown')}</div></article>`;
+      return `<article class="docs-admin-row docs-request-row"><div class="docs-admin-row-main"><strong>${escapeHtml(fields.title || 'Untitled submission')}</strong><p>${escapeHtml(fields.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${typeLabel}</span><span>By ${escapeHtml(request.authorDisplayName || 'Unknown')}</span><span>Submitted ${escapeHtml(formatDate(request.createdAt))}</span>${fields.topic ? `<span>${escapeHtml(fields.topic)}</span>` : ''}${request.requestType === 'edit' && fields.visibility ? `<span>Requested visibility: ${fields.visibility === 'private' ? 'Private' : 'Public'}</span>` : ''}<span>Community</span></div></div><div class="docs-admin-row-actions"><button class="docs-small-button" type="button" data-action="toggle-request-preview">Preview</button><button class="docs-small-button" type="button" data-action="approve-request" data-request-id="${escapeHtml(request.requestId)}">Approve</button><button class="docs-small-button" type="button" data-action="reject-request" data-request-id="${escapeHtml(request.requestId)}">Reject</button></div><div class="docs-request-preview" hidden><div class="docs-admin-row-meta">${(fields.categories || []).map((category) => `<span>${escapeHtml(category)}</span>`).join('')}</div>${renderMarkdown(fields.content || '', 'docs-request-markdown')}</div></article>`;
     }).join('');
     const officialRows = officialDocuments.map((item, index) => `<article class="docs-admin-row"><div class="docs-admin-row-main"><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${escapeHtml(getTopic(item))}</span><span>Official</span><span>Visibility: ${item.visibility === 'private' ? 'Private' : 'Public'}</span><span>Updated ${escapeHtml(formatDate(item.updatedAt || item.createdAt))}</span><span>Official order ${index + 1}</span></div></div><div class="docs-admin-row-actions"><div class="docs-order-buttons"><button type="button" data-action="move-doc" data-document-id="${escapeHtml(item.documentId)}" data-delta="-1" aria-label="Move up" ${index === 0 ? 'disabled' : ''}>↑</button><button type="button" data-action="move-doc" data-document-id="${escapeHtml(item.documentId)}" data-delta="1" aria-label="Move down" ${index === officialDocuments.length - 1 ? 'disabled' : ''}>↓</button></div><button type="button" class="docs-small-button" data-action="edit-admin-document" data-document-id="${escapeHtml(item.documentId)}">Edit</button><button type="button" class="docs-small-button" data-action="delete-admin-document" data-document-id="${escapeHtml(item.documentId)}">Delete</button></div></article>`).join('');
     const communityRows = communityDocuments.map((item) => `<article class="docs-admin-row"><div class="docs-admin-row-main"><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.summary || 'No summary provided.')}</p><div class="docs-admin-row-meta"><span>${escapeHtml(getTopic(item))}</span><span>Community</span><span>Visibility: ${item.visibility === 'private' ? 'Private' : 'Public'}</span><span>Updated ${escapeHtml(formatDate(item.updatedAt || item.createdAt))}</span><span>${formatNumber(getViews(item))} views</span></div></div><div class="docs-admin-row-actions"><button type="button" class="docs-small-button" data-action="edit-admin-document" data-document-id="${escapeHtml(item.documentId)}">Edit</button><button type="button" class="docs-small-button" data-action="delete-admin-document" data-document-id="${escapeHtml(item.documentId)}">Delete</button></div></article>`).join('');

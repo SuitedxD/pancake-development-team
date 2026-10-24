@@ -740,3 +740,30 @@
 @media (prefers-reduced-motion: reduce) {
   .docs-root *, .docs-root *::before, .docs-root *::after { scroll-behavior: auto !important; }
 }
+
+
+/* Cover images should sit above document-card content and retain the 1200×630 ratio.
+   The collection layouts use flex by default; use a two-column card grid so the cover
+   spans the full card width while the arrow stays beside the text. */
+.docs-root #official-docs-list .docs-card,
+.docs-root #community-docs-list .docs-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: start;
+}
+.docs-root #official-docs-list .docs-card-cover-wrap,
+.docs-root #community-docs-list .docs-card-cover-wrap {
+  grid-column: 1 / -1;
+  width: 100%;
+  max-height: none;
+  aspect-ratio: 1200 / 630;
+}
+.docs-root #official-docs-list .docs-card-cover,
+.docs-root #community-docs-list .docs-card-cover {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  aspect-ratio: 1200 / 630;
+  object-fit: cover;
+  object-position: center;
+}
