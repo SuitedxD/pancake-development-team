@@ -30,6 +30,7 @@
     accessToken: readAccessToken(), viewerId: getViewerId(), user: null, canAccessAdmin: false,
     adminUnlocked: false, currentMode: 'catalogue', allDocuments: [], categories: [],
     selectedCategory: '', selectedTag: '', query: '',
+    communitySelectedCategory: '', communitySelectedTag: '',
     sort: { community: 'newest' },
     editorCategory: 'Other', editorTags: [],
     selectedDocument: null, feedback: null, pendingChange: null,
@@ -92,8 +93,9 @@
     return 'community';
   }
   function safeHttpsUrl(value) {
+    if (typeof value !== 'string' || !value.trim()) return '';
     try {
-      const url = new URL(String(value || ''), window.location.href);
+      const url = new URL(value.trim(), window.location.href);
       return url.protocol === 'https:' ? url.href : '';
     } catch { return ''; }
   }
@@ -274,6 +276,7 @@
     return safeHttpsUrl(match?.[1] || '') || defaultSocialImage;
   }
   function updateShareMetadata(item) {
+    if (!item || typeof item !== 'object') { resetShareMetadata(); return; }
     const description = String(item.summary || item.description || item.content || 'Explore Pancake documentation and community guides.')
       .replace(/[#*_`>\[\]()!]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 300);
     const title = `${item.title || 'Documentation'} — Pancake Documentation`;
@@ -329,9 +332,11 @@
     const source = getSource(item);
     const href = pending ? '' : docPageUrl(item.documentId);
     const metrics = `<div class="docs-card-metrics"><span title="Views"><span aria-hidden="true">◉</span> ${formatNumber(getViews(item))} views</span><span title="People who found this useful"><span aria-hidden="true">✓</span> ${formatNumber(getUsefulCount(item))} found this helpful</span></div>`;
+    const coverImage = safeHttpsUrl(item.coverImage || item.imageUrl || '');
+    const coverMarkup = coverImage ? `<div class="docs-card-cover-wrap"><img class="docs-card-cover" src="${escapeHtml(coverImage)}" alt="${escapeHtml(item.title || 'Documentation')} cover" loading="lazy" decoding="async" referrerpolicy="no-referrer" /></div>` : '';
     return `
       <article class="docs-card${pending ? ' is-pending' : ''}" ${pending ? '' : `data-card-href="${escapeHtml(href)}" tabindex="0" role="link" aria-label="Open document ${escapeHtml(item.title)}"`}>
-        <div class="docs-card-main">
+        ${coverMarkup}<div class="docs-card-main">
           <div class="docs-card-eyebrow"><button class="docs-topic-pill docs-topic-pill-button" type="button" data-topic-filter="${escapeHtml(category)}" aria-label="Filter by ${escapeHtml(category)}">${escapeHtml(category)}</button><span class="docs-card-dot">·</span><span>${source === 'official' ? 'PANCAKE OFFICIAL' : 'COMMUNITY DOCUMENTATION'}</span></div>
           <h3>${pending ? escapeHtml(item.title || 'Untitled submission') : `<a class="docs-card-link" data-open-doc="${escapeHtml(item.documentId)}" href="${escapeHtml(href)}">${escapeHtml(item.title)}</a>`}</h3>
           <p class="docs-card-summary">${escapeHtml(item.summary || 'Open this document to read the full guide.')}</p>
@@ -344,26 +349,66 @@
   }
 
   function renderTopics() {
-    const topicsWrap = $('#docs-topic-filters');
-    const allTopicsActive = state.selectedCategory === '';
-    const allTopics = `<button class="docs-topic-button${allTopicsActive ? ' is-active' : ''}" data-topic-filter="" type="button" aria-pressed="${allTopicsActive}">All topics <span>${formatNumber(state.allDocuments.length)}</span></button>`;
-    const topics = DOC_TOPICS.map((topic) => {
-      const active = state.selectedCategory === topic;
-      const count = state.allDocuments.filter((item) => getTopic(item) === topic).length;
-      return `<button class="docs-topic-button${active ? ' is-active' : ''}" data-topic-filter="${escapeHtml(topic)}" type="button" aria-pressed="${active}">${escapeHtml(topic)} <span>${formatNumber(count)}</span></button>`;
-    }).join('');
-    topicsWrap.innerHTML = allTopics + topics;
-
+    const renderTopicButtons = (target, selectedValue, attr, items, counter) => {
+      if (!target) return;
+      const allActive = !selectedValue;
+      const allCount = counter ? counter('') : state.allDocuments.length;
+      let html = `<button type="button" class="${attr.startsWith('data-community') ? 'docs-community-filter-chip' : 'docs-topic-button'}${allActive ? ' is-active' : ''}" ${attr}="" aria-pressed="${allActive}">All topics${attr.startsWith('data-community') ? '' : ` <span>${formatNumber(allCount)}</span>`}</button>`;
+      html += items.map((item) => {
+        const active = item.toLowerCase() === String(selectedValue || '').toLowerCase();
+        const count = counter ? counter(item) : 0;
+        return `<button type="button" class="${attr.startsWith('data-community') ? 'docs-community-filter-chip' : 'docs-topic-button'}${active ? ' is-active' : ''}" ${attr}="${escapeHtml(item)}" aria-pressed="${active}">${escapeHtml(item)}${attr.startsWith('data-community') ? '' : ` <span>${formatNumber(count)}</span>`}</button>`;
+      }).join('');
+      target.innerHTML = html;
+    };
+    const communityDocs = state.allDocuments.filter((item) => getSource(item) !== 'official');
+    renderTopicButtons($('#docs-topic-filters'), state.selectedCategory, 'data-topic-filter', DOC_TOPICS,
+      (topic) => topic ? state.allDocuments.filter((item) => getTopic(item) === topic).length : state.allDocuments.length);
     const tagsWrap = $('#docs-tag-filters');
-    const allTagsActive = state.selectedTag === '';
-    const allTagsCount = state.allDocuments.filter((item) => getTags(item).length > 0).length;
-    const allTags = `<button type="button" class="docs-topic-button docs-tag-filter${allTagsActive ? ' is-active' : ''}" data-tag-filter="" aria-pressed="${allTagsActive}">All tags <span>${formatNumber(allTagsCount)}</span></button>`;
-    const tags = DOC_TAGS.map((tag) => {
-      const active = state.selectedTag.toLowerCase() === tag.toLowerCase();
-      const count = state.allDocuments.filter((item) => getTags(item).some((itemTag) => itemTag.toLowerCase() === tag.toLowerCase())).length;
-      return `<button type="button" class="docs-topic-button docs-tag-filter${active ? ' is-active' : ''}" data-tag-filter="${escapeHtml(tag)}" aria-pressed="${active}">#${escapeHtml(tag)} <span>${formatNumber(count)}</span></button>`;
-    }).join('');
-    tagsWrap.innerHTML = allTags + tags;
+    if (tagsWrap) {
+      const allActive = !state.selectedTag;
+      const allCount = state.allDocuments.filter((item) => getTags(item).length > 0).length;
+      tagsWrap.innerHTML = `<button type="button" class="docs-topic-button docs-tag-filter${allActive ? ' is-active' : ''}" data-tag-filter="" aria-pressed="${allActive}">All tags <span>${formatNumber(allCount)}</span></button>` + DOC_TAGS.map((tag) => {
+        const active = tag.toLowerCase() === state.selectedTag.toLowerCase();
+        const count = state.allDocuments.filter((item) => getTags(item).some((itemTag) => itemTag.toLowerCase() === tag.toLowerCase())).length;
+        return `<button type="button" class="docs-topic-button docs-tag-filter${active ? ' is-active' : ''}" data-tag-filter="${escapeHtml(tag)}" aria-pressed="${active}">#${escapeHtml(tag)} <span>${formatNumber(count)}</span></button>`;
+      }).join('');
+    }
+    renderTopicButtons($('#community-topic-filters'), state.communitySelectedCategory, 'data-community-topic-filter', DOC_TOPICS,
+      (topic) => topic ? communityDocs.filter((item) => getTopic(item) === topic).length : communityDocs.length);
+    const communityTags = $('#community-tag-filters');
+    if (communityTags) {
+      const allActive = !state.communitySelectedTag;
+      const countAll = communityDocs.filter((item) => getTags(item).length > 0).length;
+      communityTags.innerHTML = `<button type="button" class="docs-community-filter-chip${allActive ? ' is-active' : ''}" data-community-tag-filter="" aria-pressed="${allActive}">All tags</button>` + DOC_TAGS.map((tag) => {
+        const active = tag.toLowerCase() === state.communitySelectedTag.toLowerCase();
+        const count = communityDocs.filter((item) => getTags(item).some((itemTag) => itemTag.toLowerCase() === tag.toLowerCase())).length;
+        return `<button type="button" class="docs-community-filter-chip${active ? ' is-active' : ''}" data-community-tag-filter="${escapeHtml(tag)}" aria-pressed="${active}">#${escapeHtml(tag)}</button>`;
+      }).join('');
+    }
+  }
+
+  function syncCatalogueUrl({ replace = false } = {}) {
+    const url = new URL(`${basePath}/`, window.location.origin);
+    if (state.query.trim()) url.searchParams.set('q', state.query.trim());
+    if (state.selectedCategory) url.searchParams.set('category', state.selectedCategory);
+    if (state.selectedTag) url.searchParams.set('tag', state.selectedTag);
+    if (state.communitySelectedCategory) url.searchParams.set('communityCategory', state.communitySelectedCategory);
+    if (state.communitySelectedTag) url.searchParams.set('communityTag', state.communitySelectedTag);
+    history[replace ? 'replaceState' : 'pushState']({}, '', `${url.pathname}${url.search}`);
+  }
+
+  function applyCatalogueParams(params = new URLSearchParams(window.location.search)) {
+    state.query = params.get('q') || '';
+    const category = params.get('category') || params.get('topic') || '';
+    state.selectedCategory = DOC_TOPICS.includes(category) ? category : '';
+    const tag = params.get('tag') || '';
+    state.selectedTag = DOC_TAGS.find((value) => value.toLowerCase() === tag.toLowerCase()) || '';
+    const communityCategory = params.get('communityCategory') || '';
+    state.communitySelectedCategory = DOC_TOPICS.includes(communityCategory) ? communityCategory : '';
+    const communityTag = params.get('communityTag') || '';
+    state.communitySelectedTag = DOC_TAGS.find((value) => value.toLowerCase() === communityTag.toLowerCase()) || '';
+    if ($('#docs-search')) $('#docs-search').value = state.query;
   }
 
   function sortDocuments(items, sort) {
@@ -386,15 +431,20 @@
     });
     const official = matches.filter((item) => getSource(item) === 'official')
       .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0) || String(a.title || '').localeCompare(String(b.title || '')));
-    const community = sortDocuments(matches.filter((item) => getSource(item) !== 'official'), state.sort.community);
-    $('#docs-result-count').textContent = `${formatNumber(matches.length)} document${matches.length === 1 ? '' : 's'}${search || state.selectedCategory || state.selectedTag ? ' found' : ' available'}`;
-    $('#clear-search-button').hidden = !state.query && !state.selectedCategory && !state.selectedTag;
-    $('#reset-search-button').hidden = !state.query && !state.selectedCategory && !state.selectedTag;
+    const community = sortDocuments(matches.filter((item) => getSource(item) !== 'official').filter((item) => {
+      if (state.communitySelectedCategory && getTopic(item) !== state.communitySelectedCategory) return false;
+      if (state.communitySelectedTag && !getTags(item).some((tag) => tag.toLowerCase() === state.communitySelectedTag.toLowerCase())) return false;
+      return true;
+    }), state.sort.community);
+    const anyFilter = Boolean(state.query || state.selectedCategory || state.selectedTag || state.communitySelectedCategory || state.communitySelectedTag);
+    $('#docs-result-count').textContent = `${formatNumber(official.length + community.length)} document${official.length + community.length === 1 ? '' : 's'}${anyFilter ? ' found' : ' available'}`;
+    $('#clear-search-button').hidden = !anyFilter;
+    $('#reset-search-button').hidden = !anyFilter;
     $('#official-count').textContent = `${formatNumber(official.length)} official`;
     $('#community-count').textContent = `${formatNumber(community.length)} community`;
-    $('#official-docs-list').innerHTML = official.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">No official documents match these filters yet.</div>';
+    $('#official-docs-list').innerHTML = official.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">No official documents match the current search or general filters.</div>';
     $('#community-docs-list').innerHTML = community.map((item) => cardMarkup(item)).join('') || '<div class="docs-inline-empty">No community documents match these filters yet.</div>';
-    $('#docs-empty-state').hidden = matches.length !== 0;
+    $('#docs-empty-state').hidden = official.length + community.length !== 0;
   }
 
   async function loadCatalogue() {
@@ -446,6 +496,11 @@
   }
 
   function renderDetail(documentItem, feedback, pendingChange = null) {
+    if (!documentItem || typeof documentItem !== 'object') {
+      state.selectedDocument = null; state.feedback = null; state.pendingChange = null;
+      $('#detail-view').innerHTML = '<div class="docs-empty-state"><span class="docs-empty-mark" aria-hidden="true">!</span><h3>Could not open this document</h3><p>This document was not found, is private, or is no longer published.</p><button class="docs-small-button" data-go-catalogue type="button">← Back to all docs</button></div>';
+      setMode('detail'); resetShareMetadata(); return;
+    }
     state.selectedDocument = documentItem;
     state.feedback = feedback || { yes: 0, no: 0, yourVote: null };
     state.pendingChange = pendingChange;
@@ -462,6 +517,7 @@
         <article class="docs-article">
           <header class="docs-article-header">
             <span class="docs-article-category">${getSource(documentItem) === 'official' ? 'Pancake Official Documentation' : 'Community Docs'}</span>
+            ${safeHttpsUrl(documentItem.coverImage || '') ? `<img class="docs-article-cover" src="${escapeHtml(safeHttpsUrl(documentItem.coverImage))}" alt="${escapeHtml(documentItem.title)} cover" loading="eager" decoding="async" referrerpolicy="no-referrer" />` : ''}
             <h1 class="docs-article-title">${escapeHtml(documentItem.title)}</h1>
             ${documentItem.summary ? `<p class="docs-article-summary">${escapeHtml(documentItem.summary)}</p>` : ''}
             <div class="docs-article-meta"><span>By <strong>${escapeHtml(documentItem.authorDisplayName || 'Unknown')}</strong></span><span aria-hidden="true">·</span><span>Published <strong>${escapeHtml(formatDate(documentItem.createdAt))}</strong></span><span aria-hidden="true">·</span><span>Last updated <strong>${escapeHtml(formatDate(documentItem.updatedAt || documentItem.createdAt))}</strong></span></div>
@@ -496,22 +552,22 @@
     $('#detail-view').innerHTML = '<div class="docs-loading"><span class="docs-loader" aria-hidden="true"></span><span>Opening document…</span></div>';
     try {
       const result = await api(`/api/docs/${encodeURIComponent(documentId)}`);
-      if (result.document) {
-        state.allDocuments = state.allDocuments.map((item) => item.documentId === result.document.documentId
-          ? { ...item, views: getViews(result.document), usefulCount: getUsefulCount(result.document) }
-          : item);
+      if (!result || !result.document || typeof result.document !== 'object' || !result.document.documentId) {
+        throw new Error('This document was not found, is private, or is no longer published.');
       }
+      state.allDocuments = state.allDocuments.map((item) => item.documentId === result.document.documentId
+        ? { ...item, views: getViews(result.document), usefulCount: getUsefulCount(result.document), coverImage: result.document.coverImage || item.coverImage }
+        : item);
       renderDetail(result.document, result.feedback, result.pendingChange);
     } catch (error) {
       $('#detail-view').innerHTML = `<div class="docs-empty-state"><span class="docs-empty-mark" aria-hidden="true">!</span><h3>Could not open this document</h3><p>${escapeHtml(error.message)}</p><button class="docs-small-button" data-go-catalogue type="button">← Back to all docs</button></div>`;
     }
   }
   function navigateCatalogue(updateHistory = true) {
-    if (updateHistory) history.pushState({}, '', `${basePath}/`);
-    state.selectedCategory = ''; state.selectedTag = ''; state.query = '';
+    state.selectedCategory = ''; state.selectedTag = ''; state.query = ''; state.communitySelectedCategory = ''; state.communitySelectedTag = '';
     resetShareMetadata();
     if ($('#docs-search')) $('#docs-search').value = '';
-    setMode('catalogue'); renderCatalogue(); window.scrollTo({ top: 0, behavior: 'smooth' });
+    setMode('catalogue'); if (updateHistory) history.pushState({}, '', `${basePath}/`); renderCatalogue(); window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   function navigateDocument(documentId, updateHistory = true) {
     if (updateHistory) history.pushState({}, '', `${basePath}/?doc=${encodeURIComponent(documentId)}`);
@@ -532,8 +588,8 @@
 
   function renderEditorChoices(documentItem = null) {
     const form = $('#doc-form');
-    const category = String(documentItem?.category || 'Other');
-    state.editorCategory = DOC_TOPICS.includes(category) ? category : 'Other';
+    const category = documentItem ? String(documentItem.category || 'Other') : '';
+    state.editorCategory = DOC_TOPICS.includes(category) ? category : (documentItem ? 'Other' : '');
     state.editorTags = getTags(documentItem).filter((tag) => DOC_TAGS.includes(tag));
     $('#doc-topic-options').innerHTML = DOC_TOPICS.map((topic) => `<label class="docs-choice-chip${state.editorCategory === topic ? ' is-selected' : ''}"><input type="radio" name="doc-topic-picker" value="${escapeHtml(topic)}"${state.editorCategory === topic ? ' checked' : ''} required><span>${escapeHtml(topic)}</span></label>`).join('');
     $('#doc-tag-options').innerHTML = DOC_TAGS.map((tag) => `<label class="docs-choice-chip docs-choice-tag${state.editorTags.includes(tag) ? ' is-selected' : ''}"><input type="checkbox" name="doc-tag-picker" value="${escapeHtml(tag)}"${state.editorTags.includes(tag) ? ' checked' : ''}><span>${escapeHtml(tag)}</span></label>`).join('');
@@ -549,6 +605,7 @@
     $('#toggle-markdown-preview').textContent = 'Preview Markdown ↗';
     form.elements.title.value = documentItem?.title || '';
     form.elements.summary.value = documentItem?.summary || '';
+    form.elements.coverImage.value = documentItem?.coverImage || '';
     form.elements.content.value = documentItem?.content || '';
     renderEditorChoices(documentItem);
     const sourceField = $('#doc-source-field');
@@ -575,17 +632,33 @@
   async function submitDocForm(event) {
     event.preventDefault();
     const form = event.currentTarget, errorBox = $('#doc-form-error'), submitButton = $('#doc-form-submit');
+    const oldHtml = submitButton.innerHTML;
     errorBox.hidden = true;
-    const oldHtml = submitButton.innerHTML; submitButton.disabled = true; submitButton.textContent = 'Saving…';
-    const selectedTopic = $('input[name="doc-topic-picker"]:checked', form)?.value || 'Other';
+    $('#doc-tags-error').hidden = true; $('#doc-tag-choice-field').removeAttribute('aria-invalid');
+    const topicChoice = $('input[name="doc-topic-picker"]:checked', form);
+    if (!topicChoice) { errorBox.textContent = 'Choose a topic before saving.'; errorBox.hidden = false; return; }
+    const selectedTopic = topicChoice.value;
     const selectedTags = $$('input[name="doc-tag-picker"]:checked', form).map((input) => input.value);
     form.elements.category.value = selectedTopic;
     form.elements.tags.value = selectedTags.join(', ');
     const mode = state.editorMode;
     const fields = {
       title: form.elements.title.value.trim(), category: selectedTopic, tags: selectedTags,
-      summary: form.elements.summary.value.trim(), content: form.elements.content.value.trim()
+      summary: form.elements.summary.value.trim(), coverImage: form.elements.coverImage.value.trim(), content: form.elements.content.value.trim()
     };
+    if (selectedTags.length === 0) {
+      $('#doc-tags-error').hidden = false; $('#doc-tag-choice-field').setAttribute('aria-invalid', 'true');
+      errorBox.textContent = 'Choose at least one tag before saving.'; errorBox.hidden = false; return;
+    }
+    if (fields.summary.length < 10) {
+      form.elements.summary.setCustomValidity('Add a summary of at least 10 characters.'); form.elements.summary.reportValidity(); form.elements.summary.setCustomValidity('');
+      errorBox.textContent = 'A summary of at least 10 characters is required.'; errorBox.hidden = false; return;
+    }
+    if (fields.coverImage && !safeHttpsUrl(fields.coverImage)) {
+      form.elements.coverImage.setCustomValidity('Enter a valid HTTPS image URL.'); form.elements.coverImage.reportValidity(); form.elements.coverImage.setCustomValidity('');
+      errorBox.textContent = 'Cover image must be a valid HTTPS URL.'; errorBox.hidden = false; return;
+    }
+    submitButton.disabled = true; submitButton.textContent = 'Saving…';
     if (mode.startsWith('admin-')) fields.source = form.elements.source?.value || 'official';
     if (mode === 'admin-edit') fields.visibility = form.elements.visibility?.value || 'public';
     try {
@@ -780,17 +853,25 @@
       if (scrollToSection(id)) { event.preventDefault(); return; }
     }
 
+    const communityTagFilter = target.closest('[data-community-tag-filter]');
+    if (communityTagFilter) {
+      event.preventDefault(); state.communitySelectedTag = communityTagFilter.dataset.communityTagFilter || '';
+      resetShareMetadata(); setMode('catalogue'); syncCatalogueUrl(); renderCatalogue(); return;
+    }
+    const communityTopicFilter = target.closest('[data-community-topic-filter]');
+    if (communityTopicFilter) {
+      event.preventDefault(); state.communitySelectedCategory = communityTopicFilter.dataset.communityTopicFilter || '';
+      resetShareMetadata(); setMode('catalogue'); syncCatalogueUrl(); renderCatalogue(); return;
+    }
     const tagFilter = target.closest('[data-tag-filter]');
     if (tagFilter) {
       event.preventDefault(); state.selectedTag = tagFilter.dataset.tagFilter || '';
-      if (state.currentMode !== 'catalogue') history.pushState({}, '', `${basePath}/`);
-      resetShareMetadata(); setMode('catalogue'); renderCatalogue(); window.scrollTo({ top: 0, behavior: 'smooth' }); return;
+      resetShareMetadata(); setMode('catalogue'); syncCatalogueUrl(); renderCatalogue(); return;
     }
     const topicFilter = target.closest('[data-topic-filter]');
     if (topicFilter) {
       event.preventDefault(); state.selectedCategory = topicFilter.dataset.topicFilter || '';
-      if (state.currentMode !== 'catalogue') history.pushState({}, '', `${basePath}/`);
-      resetShareMetadata(); setMode('catalogue'); renderCatalogue(); window.scrollTo({ top: 0, behavior: 'smooth' }); return;
+      resetShareMetadata(); setMode('catalogue'); syncCatalogueUrl(); renderCatalogue(); return;
     }
     const docLink = target.closest('[data-open-doc]');
     if (docLink) { event.preventDefault(); navigateDocument(docLink.dataset.openDoc); return; }
@@ -816,8 +897,8 @@
       navigateCatalogue(); await loadCatalogue(); notify('You have been signed out.'); return;
     }
     if (target.closest('#clear-search-button, #reset-search-button, [data-reset-filters]')) {
-      state.query = ''; state.selectedCategory = ''; state.selectedTag = ''; $('#docs-search').value = '';
-      resetShareMetadata(); setMode('catalogue'); renderCatalogue(); return;
+      state.query = ''; state.selectedCategory = ''; state.selectedTag = ''; state.communitySelectedCategory = ''; state.communitySelectedTag = ''; $('#docs-search').value = '';
+      resetShareMetadata(); setMode('catalogue'); syncCatalogueUrl(); renderCatalogue(); return;
     }
     if (target.closest('#retry-docs-button')) { await loadCatalogue(); return; }
     if (target.closest('#toggle-markdown-preview')) {
@@ -880,7 +961,8 @@
   });
   $('#docs-search').addEventListener('input', (event) => {
     state.query = event.currentTarget.value;
-    if (state.currentMode !== 'catalogue') { history.pushState({}, '', `${basePath}/`); setMode('catalogue'); }
+    if (state.currentMode !== 'catalogue') setMode('catalogue');
+    syncCatalogueUrl({ replace: true });
     renderCatalogue();
   });
   $('#community-sort').addEventListener('change', (event) => { state.sort.community = event.currentTarget.value; renderCatalogue(); });
@@ -904,13 +986,13 @@
   });
   window.addEventListener('popstate', () => {
     const params = new URLSearchParams(window.location.search), documentId = params.get('doc');
-    if (documentId && /^\d{1,40}$/.test(documentId)) {
+    if (documentId && /^\d{20,30}$/.test(documentId)) {
       if (state.currentMode === 'detail' && String(state.selectedDocument?.documentId || '') === String(documentId)) {
         if (window.location.hash) scrollToSection(window.location.hash.slice(1), { updateUrl: false });
         else window.scrollTo({ top: 0, behavior: 'smooth' });
       } else loadDocument(documentId);
     } else if (params.get('library') === 'pending' && state.user) openLibrary({ focusPending: true });
-    else { resetShareMetadata(); setMode('catalogue'); renderCatalogue(); }
+    else { applyCatalogueParams(params); resetShareMetadata(); setMode('catalogue'); renderCatalogue(); }
   });
 
   async function init() {
@@ -920,6 +1002,7 @@
     if (authStatus === 'cancelled') notify('Discord sign-in was cancelled.', 'error');
     if (authStatus === 'error') notify('Discord sign-in could not be completed. Please try again.', 'error');
     if (authStatus) { params.delete('auth'); const cleanUrl = new URL(window.location.href); cleanUrl.search = params.toString(); history.replaceState({}, '', cleanUrl.toString()); }
+    applyCatalogueParams(new URLSearchParams(window.location.search));
     await refreshSession(); await loadCatalogue();
     const routeParams = new URLSearchParams(window.location.search);
     const documentId = routeParams.get('doc');
