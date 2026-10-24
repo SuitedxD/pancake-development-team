@@ -641,8 +641,6 @@
     // absence prevent the submission dialog from opening.
     if (sourceField) sourceField.hidden = mode !== 'admin-edit';
     if (form.elements.source) form.elements.source.value = documentItem ? getSource(documentItem) : 'official';
-    const visibilityField = $('#doc-visibility-field');
-    visibilityField.hidden = mode !== 'admin-edit';
     if (form.elements.visibility) form.elements.visibility.value = documentItem?.visibility === 'private' ? 'private' : 'public';
     const title = mode === 'edit' ? 'Suggest edits' : mode === 'admin-create' ? 'Create a document' : mode === 'admin-edit' ? 'Edit document' : 'Submit documentation';
     const kicker = mode.startsWith('admin-') ? 'DOCUMENTATION ADMINISTRATION' : 'CONTRIBUTE TO THE KNOWLEDGE BASE';
