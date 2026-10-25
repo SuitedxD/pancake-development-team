@@ -344,7 +344,7 @@
     const updatedDate = formatDate(item.updatedAt || item.createdAt);
     const source = getSource(item);
     const href = pending ? '' : docPageUrl(item.documentId);
-    const metrics = `<div class="docs-card-metrics">${source === 'official' ? '' : `<span title="Views"><span aria-hidden="true">◉</span> ${formatNumber(getViews(item))} views</span>`}<span title="People who found this useful"><span aria-hidden="true">✓</span> ${formatNumber(getUsefulCount(item))} found this helpful</span></div>`;
+    const metrics = `<div class="docs-card-metrics">${source === 'official' ? '' : `<span title="Views"><span aria-hidden="true">◉</span> ${formatNumber(getViews(item))} views</span>`}<span title="People who found this helpful"><span aria-hidden="true">✓</span> ${formatNumber(getUsefulCount(item))} found this helpful</span></div>`;
     const coverImage = safeHttpsUrl(item.coverImage || item.imageUrl || '');
     const coverMarkup = coverImage ? `<div class="docs-card-cover-wrap"><img class="docs-card-cover" src="${escapeHtml(coverImage)}" alt="${escapeHtml(item.title || 'Documentation')} cover" loading="lazy" decoding="async" referrerpolicy="no-referrer" /></div>` : '';
     return `
@@ -517,7 +517,7 @@
           </header>
           ${renderMarkdown(documentItem.content, 'docs-article-body')}
           <section class="docs-useful-panel" aria-labelledby="docs-useful-heading">
-            <div class="docs-useful-copy"><h2 id="docs-useful-heading">Was this useful?</h2><p>Your feedback helps us improve these documents. No sign-in required.</p><p id="docs-feedback-status" class="docs-feedback-status">${vote === true ? 'Thanks — you marked this helpful.' : vote === false ? 'Thanks — your feedback has been recorded.' : ''}</p></div>
+            <div class="docs-useful-copy"><h2 id="docs-useful-heading">Was this helpful?</h2><p>Your feedback helps us improve these documents. No sign-in required.</p><p id="docs-feedback-status" class="docs-feedback-status">${vote === true ? 'Thanks — you marked this helpful.' : vote === false ? 'Thanks — your feedback has been recorded.' : ''}</p></div>
             <div class="docs-useful-actions"><button class="docs-action-button${vote === true ? ' is-active' : ''}" data-action="vote-useful" data-useful="true" data-document-id="${escapeHtml(documentItem.documentId)}" type="button" aria-pressed="${vote === true}">Yes</button><button class="docs-action-button${vote === false ? ' is-active' : ''}" data-action="vote-useful" data-useful="false" data-document-id="${escapeHtml(documentItem.documentId)}" type="button" aria-pressed="${vote === false}">No</button></div>
           </section>
         </article>
@@ -641,7 +641,7 @@
         ? 'New documents created here are always published in Pancake Official Documentation. Official documents appear in the same order visitors see; administrators can arrange them with the order controls.'
         : mode === 'admin-edit'
           ? 'Update this published document, choose its visibility, or move it between official and community collections.'
-          : 'Share a useful guide with the Pancake community. New submissions always enter the Community Docs review queue.';
+          : 'Share a helpful guide with the Pancake community. New submissions always enter the Community Docs review queue.';
     const submitLabel = mode === 'edit' || mode === 'submission' ? 'Send for review' : mode === 'admin-create' ? 'Publish document' : 'Save changes';
     $('#doc-form-title').textContent = title; $('#doc-form-kicker').textContent = kicker; $('#doc-form-copy').textContent = copy;
     $('#doc-form-submit').innerHTML = `${escapeHtml(submitLabel)} <span aria-hidden="true">↗</span>`;
@@ -875,7 +875,7 @@
   }
   async function deleteAdminDocument(documentId) {
     const item = (state.adminData.documents || []).find((candidate) => candidate.documentId === documentId);
-    if (!window.confirm(`Delete "${item?.title || 'this document'}" permanently? Its saved favorites and usefulness votes will also be removed.`)) return;
+    if (!window.confirm(`Delete "${item?.title || 'this document'}" permanently? Its saved favorites and helpfulness votes will also be removed.`)) return;
     try {
       const result = await api(`/api/docs/admin/documents/${encodeURIComponent(documentId)}`, { method: 'DELETE', body: {} });
       notify(result.message || 'Document deleted.'); await loadAdminDashboard(false); await loadCatalogue();
