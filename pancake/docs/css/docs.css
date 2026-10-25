@@ -75,7 +75,7 @@
   position: absolute; top: auto; right: calc(130px - (var(--docs-icon-size) / 2));
   bottom: calc(65px - (var(--docs-icon-size) / 2)); z-index: 0; display: grid;
   place-items: center; width: var(--docs-icon-size); pointer-events: none; user-select: none;
-  opacity: .17; filter: blur(3px) saturate(.82);
+  opacity: .17; filter: none saturate(.82);
   animation: docsIconReveal .88s cubic-bezier(.2,.75,.25,1) .16s both;
 }
 .docs-hero-icon::before {
