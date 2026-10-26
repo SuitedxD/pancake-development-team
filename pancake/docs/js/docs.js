@@ -355,7 +355,7 @@
           <p class="docs-card-summary">${escapeHtml(item.summary || 'Open this document to read the full guide.')}</p>
           ${categoryChips ? `<div class="docs-card-categories" aria-label="Categories">${categoryChips}</div>` : ''}
           ${metrics}
-          <div class="docs-card-footer"><span>By: <strong>${escapeHtml(getAuthorDisplayName(item))}</strong></span><span>${pending ? 'Submitted' : 'Updated'} <strong>${escapeHtml(updatedDate)}</strong></span>${pending ? '<span class="docs-status-pill">Pending for approval</span>' : ''}</div>
+          <div class="docs-card-footer"><span>By: <strong>${escapeHtml(getAuthorDisplayName(item))}</strong></span><span>${pending ? 'Submitted' : 'Updated:'} <strong>${escapeHtml(updatedDate)}</strong></span>${pending ? '<span class="docs-status-pill">Pending for approval</span>' : ''}</div>
         </div>
         <span class="docs-card-arrow" aria-hidden="true">${pending ? '◷' : '↗'}</span>
       </article>`;
