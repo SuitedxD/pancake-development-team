@@ -672,7 +672,6 @@
       form.elements.summary.setCustomValidity('Add a summary of at least 10 characters.'); form.elements.summary.reportValidity(); form.elements.summary.setCustomValidity('');
       errorBox.textContent = 'A summary of at least 10 characters is required.'; errorBox.hidden = false; return;
     }
-    if (fields.content.length < 10) { errorBox.textContent = 'Markdown content must contain at least 10 characters.'; errorBox.hidden = false; form.elements.content.focus(); return; }
     if (fields.coverImage && !safeHttpsUrl(fields.coverImage)) {
       form.elements.coverImage.setCustomValidity('Enter a valid HTTPS image URL.'); form.elements.coverImage.reportValidity(); form.elements.coverImage.setCustomValidity('');
       errorBox.textContent = 'Cover image must be a valid HTTPS URL.'; errorBox.hidden = false; return;
