@@ -5,7 +5,7 @@
   const apiBase = (document.querySelector('meta[name="api-base"]')?.content || '').trim().replace(/\/$/, '');
   const accessTokenKey = 'pancakePluginPortalAccessToken';
   const viewerKey = 'pancakeDocsViewerId';
-  const defaultSocialImage = 'https://suitedxd.github.io/pancake-development-team/assets/pancake/pancake-social_02.png';
+  const defaultSocialImage = 'https://i.imgur.com/4S2JWBK.png';
   const DOC_TOPICS = ['Getting Started', 'Installation', 'Configuration', 'Commands', 'Moderation', 'Administration', 'Permissions', 'Roles', 'Plugins', 'Plugin Development', 'Automation', 'Integrations', 'Troubleshooting', 'FAQs', 'Server Setup', 'Dashboard', 'Security', 'Events', 'Music & Media', 'Economy', 'Levels & XP', 'Logging', 'Webhooks', 'API & Developers', 'Customization', 'Other'];
   const DOC_CATEGORIES = ['Setup', 'Beginner', 'Advanced', 'Commands', 'Configuration', 'Permissions', 'Discord', 'Server Management', 'Moderation', 'Automation', 'Plugin', 'Admin', 'API', 'Integration', 'Troubleshooting', 'Examples', 'Guide', 'FAQ', 'Security', 'Tips', 'Customization', 'Performance', 'Updates', 'Logging', 'Markdown', 'Webhooks', 'Community', 'Official', 'Other'];
 
